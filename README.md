@@ -100,6 +100,14 @@
 内置 SQL 查询测试沙盒，可实时调试 Trino 联邦 SQL。系统会在应用层严密拦截一切 DDL/DML 写操作指令，防范物理库修改风险。
 ![SQL沙盒测试](images/SQL%E6%B2%99%E7%9B%92%E6%B5%8B%E8%AF%95.png)
 
+### 6. 标准 Model Context Protocol (MCP) 服务暴露
+内置标准的 MCP 协议协议端，向 Cursor、Claude Desktop 等 AI 客户端暴露三个标准的元数据工具与 SQL 执行接口。
+![MCP工具列表](images/MCP%E5%B7%A5%E5%85%B7%E5%88%97%E8%A1%A8.png)
+
+### 7. AI Agent 跨库智能数据问答实测
+AI 客户端（如 Cursor Agent）通过连接本平台的 MCP 协议入口，能够一键获取语义修正定义并精准生成、执行跨数据源（MySQL + PostgreSQL）联邦 SQL 来回答复杂业务问题。
+![Agent场景问答](images/Agent%E5%9C%BA%E6%99%AF%E9%97%AE%E7%AD%94.png)
+
 ---
 
 
