@@ -5,6 +5,7 @@ services:
   trino:
     image: trinodb/trino:latest
     container_name: trino-coordinator
+    user: root
     ports:
       - "8080:8080"
     environment:
