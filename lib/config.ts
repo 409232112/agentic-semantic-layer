@@ -81,34 +81,7 @@ const DEFAULT_CONFIG: ConfigData = {
       }
     }
   ],
-  scenarios: [
-    {
-      code: "finance",
-      name: "财务分析场景",
-      description: "分析销售额、净利润、订单详情以及用户行为，用于财务核算与转化分析。",
-      global_rules: "1. 涉及金额计算时，销售净额计算公式默认统一为 price * qty - discount。\n2. 查询年度数据时，默认使用当前年份进行过滤。",
-      catalogs: ["postgresql", "mysql"],
-      tables: [
-        "postgresql.public.orders",
-        "mysql.mysql_db.brands"
-      ],
-      table_overrides: {
-        "postgresql.public.orders": "订单表，包含销售核心字段"
-      },
-      field_overrides: {
-        "postgresql.public.orders": {
-          "order_id": {
-            "logical_name": "订单ID",
-            "description": "主键，唯一订单号"
-          },
-          "price": {
-            "logical_name": "单价",
-            "description": "商品的销售单价"
-          }
-        }
-      }
-    }
-  ]
+  scenarios: []
 };
 
 // Ensure directory exists
