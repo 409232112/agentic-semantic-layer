@@ -164,14 +164,7 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // 系统预设数据源禁止删除
-    const systemPreset = ['postgresql', 'mysql'];
-    if (systemPreset.includes(name)) {
-      return NextResponse.json(
-        { success: false, error: 'System preset catalogs cannot be deleted' },
-        { status: 400 }
-      );
-    }
+
 
     console.log(`Executing Trino DROP CATALOG for ${name}...`);
 
