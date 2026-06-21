@@ -1421,21 +1421,21 @@ export default function WorkspaceConsole() {
                   <div className="space-y-3">
                     {datasources.map(ds => (
                       <div key={ds.name} className="bg-[#121215] border border-white/5 p-4 flex flex-col justify-between space-y-3">
-                        <div className="flex items-start justify-between space-x-2">
-                          <div className="min-w-0 flex-1">
+                        <div className="flex flex-col space-y-3">
+                          <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
                               <span className="font-bold text-sm text-slate-100 font-mono">{ds.name.toUpperCase()}</span>
                               <span className="text-[10px] font-mono text-[#ff2a2a] border border-[#ff2a2a]/30 bg-[#ff2a2a]/5 px-1.5 py-0.5 uppercase">{ds.connector}</span>
                             </div>
-                            <div className="mt-2 text-[11px] font-mono text-slate-500 space-y-1 break-all">
-                              {Object.entries(ds.properties).map(([k, v]) => (
-                                <div key={k}><span className="text-slate-400">{k}:</span> {String(v)}</div>
-                              ))}
+                            <div className="flex items-center space-x-1.5 border border-[#4af626]/20 bg-[#4af626]/5 text-[#4af626] px-2 py-0.5 text-[9px] font-mono font-bold uppercase whitespace-nowrap">
+                              <Check size={8} />
+                              <span>已连接 / CONNECTED</span>
                             </div>
                           </div>
-                          <div className="flex items-center space-x-1.5 border border-[#4af626]/20 bg-[#4af626]/5 text-[#4af626] px-2 py-0.5 text-[9px] font-mono font-bold uppercase whitespace-nowrap">
-                            <Check size={8} />
-                            <span>已连接 / CONNECTED</span>
+                          <div className="text-[11px] font-mono text-slate-500 space-y-1 overflow-x-auto scrollbar-thin pb-1">
+                            {Object.entries(ds.properties).map(([k, v]) => (
+                              <div key={k} className="whitespace-nowrap"><span className="text-slate-400">{k}:</span> {String(v)}</div>
+                            ))}
                           </div>
                         </div>
                         <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-white/5">
