@@ -109,8 +109,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // 强制追加 Trino 网关层物理只读限制，确保任何物理库写事务都会被底层驱动直接拦截
+    const securedProperties = {
+      ...properties,
+      'metadata.read-only': 'true'
+    };
+
     // 格式化 WITH 子句属性
-    const withClauses = Object.entries(properties)
+    const withClauses = Object.entries(securedProperties)
       .map(([key, val]) => `"${key}" = '${String(val).replace(/'/g, "''")}'`)
       .join(',\n  ');
 
@@ -123,7 +129,7 @@ export async function POST(request: Request) {
     // 2. 创建成功后，保存至本地 JSON 配置
     const config = readConfig();
     const existingIdx = config.datasources.findIndex(d => d.name === name);
-    const newDs = { name, connector, properties };
+    const newDs = { name, connector, properties: securedProperties };
     if (existingIdx > -1) {
       config.datasources[existingIdx] = newDs;
     } else {
