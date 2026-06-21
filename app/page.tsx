@@ -182,9 +182,8 @@ export default function WorkspaceConsole() {
           'connection-password': dsForm.password
         };
       } else if (dsForm.connector === 'mysql') {
-        const dbSuffix = dsForm.database ? dsForm.database.trim() : '';
         properties = {
-          'connection-url': `jdbc:mysql://${dsForm.host}:${dsForm.port}/${dbSuffix}`,
+          'connection-url': `jdbc:mysql://${dsForm.host}:${dsForm.port}/`,
           'connection-user': dsForm.user,
           'connection-password': dsForm.password
         };
@@ -1552,14 +1551,12 @@ export default function WorkspaceConsole() {
                       </div>
                     )}
 
-                    {(dsForm.connector === 'postgresql' || dsForm.connector === 'mysql') && (
+                    {dsForm.connector === 'postgresql' && (
                       <div>
-                        <label className="block text-[10px] text-slate-400 mb-1">
-                          {dsForm.connector === 'postgresql' ? '目标数据库名 / DB_NAME' : '目标数据库名 (可选，留空则拉取所有库) / DB_NAME'}
-                        </label>
+                        <label className="block text-[10px] text-slate-400 mb-1">目标数据库名 / DB_NAME</label>
                         <input 
                           type="text" 
-                          required={dsForm.connector === 'postgresql'}
+                          required
                           value={dsForm.database} 
                           onChange={e => setDsForm({ ...dsForm, database: e.target.value })}
                           className="w-full p-2 bg-[#070709] border border-slate-800 focus:border-[#ff2a2a] text-slate-200 outline-none rounded-none font-mono placeholder-slate-650"
