@@ -1,0 +1,71 @@
+import { NextResponse } from 'next/server';
+import { runTrinoQuery } from '@/lib/trino';
+
+// GET /api/semantics/schema - 浏览物理 Catalog 下的库、表与字段结构
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const catalog = searchParams.get('catalog');
+  const schema = searchParams.get('schema');
+  const table = searchParams.get('table');
+
+  if (!catalog) {
+    return NextResponse.json(
+      { success: false, error: 'Catalog parameter is required' },
+      { status: 400 }
+    );
+  }
+
+  try {
+    // 场景 1：获取某个具体表的字段结构 (Describe Table)
+    if (schema && table) {
+      const describeRes = await runTrinoQuery(`DESCRIBE ${catalog}.${schema}.${table}`);
+      const columns = describeRes.data.map(row => ({
+        name: row[0] as string,
+        type: row[1] as string,
+        extra: row[2] as string,
+        comment: row[3] as string
+      }));
+      return NextResponse.json({ success: true, columns });
+    }
+
+    // 场景 2：获取某个 Schema 下的所有表
+    if (schema) {
+      const tablesRes = await runTrinoQuery(`SHOW TABLES FROM ${catalog}.${schema}`);
+      const tables = tablesRes.data.map(row => row[0]);
+      return NextResponse.json({ success: true, tables });
+    }
+
+    // 场景 3：获取整个 Catalog 下的所有 Schema 与其表结构树 (树状展开)
+    const schemasRes = await runTrinoQuery(`SHOW SCHEMAS FROM ${catalog}`);
+    const schemasList = schemasRes.data.map(row => row[0] as string);
+    
+    const tree = [];
+
+    for (const sch of schemasList) {
+      // 过滤系统架构
+      if (sch.toLowerCase() === 'information_schema') continue;
+      
+      let tables: string[] = [];
+      try {
+        const tablesRes = await runTrinoQuery(`SHOW TABLES FROM ${catalog}.${sch}`);
+        tables = tablesRes.data.map(row => row[0] as string);
+      } catch (tableErr) {
+        // 部分 schema 可能没有访问权限，捕获并跳过
+        console.warn(`Could not show tables for ${catalog}.${sch}:`, tableErr);
+      }
+
+      tree.push({
+        name: sch,
+        tables
+      });
+    }
+
+    return NextResponse.json({ success: true, schemas: tree });
+  } catch (e: any) {
+    console.error('Failed to get schema info:', e);
+    return NextResponse.json(
+      { success: false, error: e.message || 'Failed to retrieve schema metadata' },
+      { status: 500 }
+    );
+  }
+}

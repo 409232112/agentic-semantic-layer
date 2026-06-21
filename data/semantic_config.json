@@ -1,0 +1,66 @@
+{
+  "datasources": [
+    {
+      "name": "postgresql",
+      "connector": "postgresql",
+      "properties": {
+        "connection-url": "jdbc:postgresql://localhost:5432/postgres",
+        "connection-user": "postgres",
+        "connection-password": "sm2:1021481508e594f043c9afb4094b558f44d1f6385d8accf01d57a43e926354d4aa67225800d63aa8b3588ad1b97e7c537c15a299fb4239f511253d2f0d8e6f8a480dfa10d38f364a0a69f64c782d4f15081a3db076b41d5a44d0221b15583f9eb93278600126d356"
+      }
+    },
+    {
+      "name": "mysql",
+      "connector": "mysql",
+      "properties": {
+        "connection-url": "jdbc:mysql://localhost:3306/",
+        "connection-user": "root",
+        "connection-password": "sm2:f3cca53dd42dee9ddda81cf81994909c02d7eb4cb6ebf28b488c4ec3cec8470b6ef0b7831341a7403c521b83d959dad24d003657ec7d6580bf8369315a37982a4deecb3c57232fce6be5c6177f49ac7477485a9863450194c68a4bfde51f46d93dce3712"
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "code": "finance",
+      "name": "财务分析场景",
+      "description": "分析销售额、净利润、订单详情以及用户行为，用于财务核算与转化分析。",
+      "global_rules": "1、测试orders global rule",
+      "catalogs": [
+        "postgres",
+        "mysql"
+      ],
+      "tables": [
+        "postgres.public.orders",
+        "mysql.mysql_db.brands"
+      ],
+      "table_overrides": {
+        "postgres.public.orders": "订单表",
+        "mysql.mysql_db.brands": "品牌表"
+      },
+      "field_overrides": {
+        "postgres.public.orders": {
+          "brand_id": {
+            "description": "品牌id"
+          },
+          "price": {
+            "description": "单价"
+          },
+          "qty": {
+            "description": "销售量"
+          },
+          "discount": {
+            "description": "折扣"
+          }
+        },
+        "mysql.mysql_db.brands": {
+          "name": {
+            "description": "品牌名称"
+          },
+          "country": {
+            "description": "品牌所属国家"
+          }
+        }
+      }
+    }
+  ]
+}
