@@ -1,12 +1,12 @@
 # Agentic Semantic Layer Platform
 
-这是一个为大语言模型（LLM）与 Agent 打造的**联邦语义层管理系统**。它连接底层物理数据源（支持 PostgreSQL、MySQL），并通过 Trino 联邦网关提供统一的动态 SQL 执行和语义定义配置，为上层 Agent 提供清晰、结构化的统一数据接口与 Prompt 生成机制。
+这是一个为大语言模型（LLM）与 Agent 打造的**联邦语义层管理系统**。它连接底层物理数据源，并通过 Trino 联邦网关提供统一的动态 SQL 执行和语义定义配置，为上层 Agent 提供清晰、结构化的统一数据接口与 Prompt 生成机制。
 
 ## 🌟 系统核心架构与设计
 
 ### 1. 联邦查询网关 (Trino)
 * 基于 **Trino Coordinator** 提供分布式 SQL 查询执行。
-* 物理数据源（PostgreSQL / MySQL）通过动态 `CREATE CATALOG` 方式在线热挂载，无需重启，无繁琐的静态配置文件。
+* 物理数据源通过动态 `CREATE CATALOG` 方式在线热挂载，无需重启，无繁琐的静态配置文件。
 
 ### 2. 动态语义配置映射 (Semantic Engine)
 * **全局语义规则 (Global Rules)**：配置分析场景的全局约束条件，如统一的业务指标公式、时区规范等。
@@ -17,17 +17,15 @@
 * 支持 **Markdown（默认表格结构）** 与 **JSON（原始树状数据）** 双格式输出，默认采用对大模型理解最为友好的 Markdown 表格。
 * 将物理表元数据（Schema）、全局/表/字段业务语义与用户问题（Natural Language Question）动态拼装为完整的 **大模型 Prompt**，支持按需控制和复制。
 
-### 4. 交互式 SQL 沙盒与安全审计
-* 内置 Navicat 风格的轻量化开发终端，支持多行编辑与基于 `sql-formatter` 的 **Trino SQL 自动格式化美化**。
-* **执行安全限制**：如果不含 `LIMIT` 关键字的 SELECT 查询会自动默认追加 `LIMIT 10`。
-* **写操作审计拦截**：严格拦截所有的 DDL/DML 写操作（如 `DROP`、`DELETE`、`UPDATE`、`INSERT` 等），保护物理库数据安全。
+### 4. 交互式 SQL 沙盒与多重只读安全管控
+* 内置交互式 SQL 开发沙盒，支持多行编辑与 SQL 自动格式化。
+* **应用层安全限制**：如果不含 `LIMIT` 关键字的 SELECT 查询会自动默认追加 `LIMIT 10`。
+* **应用层写操作拦截**：严格拦截所有的 DDL/DML 写操作（如 `DROP`、`DELETE`、`UPDATE`、`INSERT` 等），防止修改物理库数据。
+* **网关层只读事务锁定**：在动态挂载 Catalog 时自动注入 `metadata.read-only = true` 参数。即使底层数据库物理账号拥有写入权限，网关驱动也会拦截并阻断一切写事务请求，保障数据绝对安全。
 
 ### 5. 国密密码加密安全 (SM2 Encryption)
-* 配置文件 `semantic_config.json` 中的数据源 `connection-password` 采用 **国密 SM2 非对称加密** 算法。
-* 数据库密码以密文（以 `sm2:` 前缀标识）落盘，系统运行时在内存中自动使用私钥解密并进行动态数据源热挂载，保障线上凭证安全。
-
-### 6. 极客工业蓝图风 UI (Cyberpunk Industrial Theme)
-* 采用深色极客 CRT 蓝图美学，全响应式网格与动效设计。
+* 配置文件 `semantic_config.json` 中的数据源密码采用 **国密 SM2 非对称加密** 算法。
+* 数据库密码以密文（以 `sm2:` 前缀标识）落盘，系统运行时在内存中自动使用私钥解密并进行动态数据源热挂载，保障凭证存储安全。
 
 ---
 
@@ -37,10 +35,10 @@
 ├── app/                  # Next.js 页面与接口路由
 │   ├── api/              # 后端 API (数据源管理、语义合并、SQL执行、MCP)
 │   ├── mcp/              # MCP 标准协议服务端模块
-│   └── page.tsx          # 交互式前端控制台
+│   └── page.tsx          # 交互式控制台页面
 ├── data/                 # 物理挂载目录
-│   └── semantic_config.json # 业务场景与语义定义的本地配置文件 (热挂载)
-├── lib/                  # Trino 连接与本地配置读写封装 (包含 SM2 加解密引擎)
+│   └── semantic_config.json # 业务场景与语义定义的本地配置文件
+├── lib/                  # 连接与配置读写封装 (包含 SM2 加解密引擎)
 ├── Dockerfile            # 容器化多阶段打包定义
 └── docker-compose.yml    # 本地双服务 (Trino + Next.js) 启动编排
 ```
@@ -51,7 +49,7 @@
 
 ### 1. 准备本地数据
 在根目录的 `data` 文件夹中确保存在 `semantic_config.json`。如不存在，系统在首次启动时会自动初始化生成包含预设场景和数据库连接的配置文件。
-*(注意：您可以使用 `connection-password` 的明文，平台在保存配置时会自动对其进行国密 SM2 加密)*
+*(注意：您可以使用明文密码，平台在保存配置时会自动对其进行国密 SM2 加密)*
 
 ### 2. 构建 Next.js 生产镜像
 ```bash
