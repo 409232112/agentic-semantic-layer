@@ -126,8 +126,9 @@ export default function WorkspaceConsole() {
           'connection-password': dsForm.password
         };
       } else if (dsForm.connector === 'mysql') {
+        const dbSuffix = dsForm.database ? dsForm.database.trim() : '';
         properties = {
-          'connection-url': `jdbc:mysql://${dsForm.host}:${dsForm.port}/`,
+          'connection-url': `jdbc:mysql://${dsForm.host}:${dsForm.port}/${dbSuffix}`,
           'connection-user': dsForm.user,
           'connection-password': dsForm.password
         };
@@ -163,7 +164,6 @@ export default function WorkspaceConsole() {
   const [scForm, setScForm] = useState({
     code: '',
     name: '',
-    description: '',
     global_rules: '',
     catalogs: [] as string[],
     tables: [] as string[]
@@ -210,7 +210,7 @@ export default function WorkspaceConsole() {
       const data = await res.json();
       if (data.success) {
         setScStatusMsg({ type: 'success', text: data.message });
-        setScForm({ code: '', name: '', description: '', global_rules: '', catalogs: [], tables: [] });
+        setScForm({ code: '', name: '', global_rules: '', catalogs: [], tables: [] });
         setIsEditingScenario(false);
         refreshMetadata();
       } else {
@@ -225,7 +225,6 @@ export default function WorkspaceConsole() {
     setScForm({
       code: sc.code,
       name: sc.name,
-      description: sc.description || '',
       global_rules: sc.global_rules || '',
       catalogs: [...sc.catalogs],
       tables: [...(sc.tables || [])]
@@ -235,7 +234,7 @@ export default function WorkspaceConsole() {
   };
 
   const cancelEditScenario = () => {
-    setScForm({ code: '', name: '', description: '', global_rules: '', catalogs: [], tables: [] });
+    setScForm({ code: '', name: '', global_rules: '', catalogs: [], tables: [] });
     setIsEditingScenario(false);
     setScStatusMsg(null);
   };
@@ -1426,7 +1425,17 @@ export default function WorkspaceConsole() {
                       <label className="block text-[10px] text-slate-400 mb-1">物理连接器类型 / CONNECTOR_TYPE</label>
                       <select 
                         value={dsForm.connector} 
-                        onChange={e => setDsForm({ ...dsForm, connector: e.target.value })}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setDsForm({
+                            ...dsForm,
+                            connector: val,
+                            port: val === 'mysql' ? '3306' : '5432',
+                            user: val === 'mysql' ? 'root' : 'postgres',
+                            password: val === 'mysql' ? 'root' : 'postgres',
+                            database: val === 'mysql' ? '' : 'postgres'
+                          });
+                        }}
                         className="w-full p-2 bg-[#050507] border border-white/15 text-xs text-[#eaeaea] font-mono p-1.5 focus:border-[#ff2a2a] cursor-pointer"
                       >
                         <option value="postgresql">PostgreSQL</option>
@@ -1483,12 +1492,14 @@ export default function WorkspaceConsole() {
                       </div>
                     )}
 
-                    {dsForm.connector === 'postgresql' && (
+                    {(dsForm.connector === 'postgresql' || dsForm.connector === 'mysql') && (
                       <div>
-                        <label className="block text-[10px] text-slate-400 mb-1">目标数据库名 / DB_NAME</label>
+                        <label className="block text-[10px] text-slate-400 mb-1">
+                          {dsForm.connector === 'postgresql' ? '目标数据库名 / DB_NAME' : '目标数据库名 (可选，留空则拉取所有库) / DB_NAME'}
+                        </label>
                         <input 
                           type="text" 
-                          required
+                          required={dsForm.connector === 'postgresql'}
                           value={dsForm.database} 
                           onChange={e => setDsForm({ ...dsForm, database: e.target.value })}
                           className="w-full p-2 bg-[#070709] border border-slate-800 focus:border-[#ff2a2a] text-slate-200 outline-none rounded-none font-mono placeholder-slate-650"
@@ -1565,7 +1576,7 @@ export default function WorkspaceConsole() {
                             </button>
                           </div>
                         </div>
-                        <p className="text-[11px] text-slate-400 mt-2 font-mono">{sc.description}</p>
+
                         
                         <div className="mt-3 flex flex-wrap gap-1 pt-3 border-t border-white/5">
                           {sc.catalogs.map((cat: string) => (
@@ -1608,16 +1619,7 @@ export default function WorkspaceConsole() {
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">业务范围描述 / DESCRIPTION</label>
-                      <textarea 
-                        rows={3}
-                        placeholder="简述该场景包含的分析对象与业务范围..."
-                        value={scForm.description} 
-                        onChange={e => setScForm({ ...scForm, description: e.target.value })}
-                        className="w-full p-2 bg-[#070709] border border-slate-800 focus:border-[#ff2a2a] text-slate-200 outline-none rounded-none font-mono placeholder-slate-650"
-                      />
-                    </div>
+
 
                     <div>
                       <label className="block text-[10px] text-slate-400 mb-1">场景大模型生成规则与注意事项 / GLOBAL PROMPT RULES</label>
