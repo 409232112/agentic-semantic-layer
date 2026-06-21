@@ -51,20 +51,73 @@
 在根目录的 `data` 文件夹中确保存在 `semantic_config.json`。如不存在，系统在首次启动时会自动初始化生成包含预设场景和数据库连接的配置文件。
 *(注意：您可以使用明文密码，平台在保存配置时会自动对其进行国密 SM2 加密)*
 
-### 2. 构建 Next.js 生产镜像
-```bash
-docker build -t semantic:latest .
-```
+---
 
-### 3. 一键部署 (Trino + Next.js)
-```bash
-docker compose up -d
-```
-启动后：
-* 访问控制台前端: `http://localhost:3000`
-* Trino Coordinator 地址: `http://localhost:8080` (由 `nodejs` 容器内网通信，外网暴露以供临时查验)
+### 2. 部署方案一：Docker Compose 一键本地部署 (Trino + Next.js)
+
+如果您希望在本地或单台服务器上直接一键运行完整平台：
+
+1. **构建 Next.js 生产镜像**：
+   ```bash
+   docker build -t semantic:latest .
+   ```
+2. **一键启动双服务**：
+   ```bash
+   docker compose up -d
+   ```
+   启动后：
+   * 控制台前端地址：`http://localhost:3000`
+   * Trino Coordinator 地址：`http://localhost:8080`
 
 ---
+
+### 3. 部署方案二：混合部署（Linux 运行 Trino 容器 + Windows 本地运行 Node 服务）
+
+如果您将 Trino 跑在 Linux 服务器（如 `192.168.0.165`）上，而前端 Node 服务跑在本地 Windows 开发机上进行开发调试：
+
+#### 第一步：在 Linux 服务器上启动 Trino 容器
+在服务器上运行以下命令（支持动态 Catalog 热挂载与宿主机卷挂载持久化）：
+```bash
+# 创建持久化 Catalog 的本地目录并授权
+mkdir -p /opt/trino-catalog && chmod 777 /opt/trino-catalog
+
+# 启动 Trino 容器
+docker run -d \
+  --name trino-coordinator \
+  -p 8080:8080 \
+  -e CATALOG_MANAGEMENT=dynamic \
+  -v /opt/trino-catalog:/etc/trino/catalog \
+  --restart always \
+  trinodb/trino:latest
+```
+
+#### 第二步：在 Windows 本地启动 Node.js 服务
+1. **安装 Node.js 依赖**：
+   打开 Windows 终端，在项目根目录下配置阿里镜像并安装依赖：
+   ```bash
+   npm config set registry https://registry.npmmirror.com
+   npm install
+   ```
+2. **配置环境变量**：
+   在项目根目录下创建一个 `.env.local` 文件，指定 Trino 的连接地址（替换为您的 Linux 服务器 IP）：
+   ```env
+   TRINO_URL=http://192.168.0.165:8080
+   ```
+3. **运行 Node 服务**：
+   * **开发模式 (运行热重载服务，推荐)**：
+     ```bash
+     npm run dev
+     ```
+     启动后访问：`http://localhost:3000`
+   * **生产模式 (编译并本地部署)**：
+     ```bash
+     npm run build
+     npm run start
+     ```
+     启动后访问：`http://localhost:3000`
+
+---
+
 
 ## 🔗 接口与协议集成
 

@@ -81,8 +81,6 @@ ConfigData
 3. **SQL 生成** - LLM 在系统提示词（含 Schema + 规则）约束下生成 Trino SELECT；从 markdown 代码块中提取 SQL；本地降级返回硬编码演示 SQL
 4. **执行查询** - 将生成的 SQL 提交 Trino，返回列元数据 + 行数据 + 完整 trace
 
-依赖环境变量 `EMBEDDING_API_KEY` / `EMBEDDING_BASE_URL`（默认指向 Dashscope）。
-
 ### MCP 服务器（`app/mcp/route.ts`）
 
 向 AI 客户端暴露三个工具：
