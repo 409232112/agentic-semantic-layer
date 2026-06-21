@@ -69,7 +69,7 @@ docker compose up -d
 ## 🔗 接口与协议集成
 
 ### 1. 标准 Model Context Protocol (MCP) 集成
-本平台内置了标准的 MCP 服务器，其入口为 `POST/GET http://localhost:3000/api/mcp`。大模型（如 Cursor, Cline, Claude Desktop）可通过该接口直接调取平台定义的语义元数据并执行安全的联邦查询。
+本平台内置了标准的 MCP 服务器，其入口为 `POST/GET http://localhost:3000/mcp`。大模型（如 Cursor, Cline, Claude Desktop）可通过该接口直接调取平台定义的语义元数据并执行安全的联邦查询。
 
 #### 提供给 AI 客户端的核心工具 (MCP Tools)
 1. **`list_scenarios`**
@@ -91,7 +91,7 @@ docker compose up -d
       "command": "curl",
       "args": [
         "-X", "POST",
-        "http://localhost:3000/api/mcp"
+        "http://localhost:3000/mcp"
       ]
     }
   }
@@ -104,7 +104,7 @@ docker compose up -d
 
 * **`/api/datasource`**：热挂载与卸载物理 Catalog 数据源。
 * **`/api/scenario`**：获取及更新业务场景范围和信息定义。
-* **`/api/semantics`**：获取、更新、增量保存全局/表/字段语义。
+* **`/api/semantics`**：获取、更新、增量保存全局/表/字段语义.
 * **`/api/query/build-prompt`**：在测试沙盒中获取拼装了 Schema 结构及规则描述的 LLM Prompt。
 * **`/api/query/execute`**：在沙盒中执行 SQL，获得列元数据及行数据。
-* **`/api/mcp`**：标准的 Model Context Protocol (MCP) 语义层服务入口。
+* **`/mcp`**：标准的 Model Context Protocol (MCP) 语义层服务入口。
