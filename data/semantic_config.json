@@ -1,63 +1,165 @@
 {
   "datasources": [
     {
-      "name": "postgresql",
-      "connector": "postgresql",
-      "properties": {
-        "connection-url": "jdbc:postgresql://localhost:5432/postgres",
-        "connection-user": "postgres",
-        "connection-password": "sm2:1021481508e594f043c9afb4094b558f44d1f6385d8accf01d57a43e926354d4aa67225800d63aa8b3588ad1b97e7c537c15a299fb4239f511253d2f0d8e6f8a480dfa10d38f364a0a69f64c782d4f15081a3db076b41d5a44d0221b15583f9eb93278600126d356"
-      }
-    },
-    {
       "name": "mysql",
       "connector": "mysql",
       "properties": {
-        "connection-url": "jdbc:mysql://localhost:3306/",
+        "connection-url": "jdbc:mysql://192.168.0.165:3306/",
         "connection-user": "root",
-        "connection-password": "sm2:f3cca53dd42dee9ddda81cf81994909c02d7eb4cb6ebf28b488c4ec3cec8470b6ef0b7831341a7403c521b83d959dad24d003657ec7d6580bf8369315a37982a4deecb3c57232fce6be5c6177f49ac7477485a9863450194c68a4bfde51f46d93dce3712"
+        "connection-password": "sm2:cb890c9cf2ca303372cf1396551cb47836da91bb9d9949df1ce2bbc69fb0905d6de61651ea27ff4d6607a5cba96682c79c385a232153d813f9b0035657cce92875564ea88df815f688de4dd7f5c85fcb138e2bfe5ccd59469f9190b19426b214b8cc89af4a49261bbac696ff"
+      }
+    },
+    {
+      "name": "postgresql",
+      "connector": "postgresql",
+      "properties": {
+        "connection-url": "jdbc:postgresql://192.168.0.165:5432/agentic",
+        "connection-user": "postgres",
+        "connection-password": "sm2:2a14210a89ef454d92273a45cac3c422fc09920965844b664c65a565f3a4c9012e4d070d5388e1ddc47386d10435fe3a97af73e5eb78a1dbddfe6ed98f62806d9f7e15b7b8b4dcd405737df203544d62e32721a937e51b43b7fc2500bdffecfe5d5479db258bf4f7651bb567"
       }
     }
   ],
   "scenarios": [
     {
-      "code": "finance",
-      "name": "财务分析场景",
-      "description": "分析销售额、净利润、订单详情以及用户行为，用于财务核算与转化分析。",
-      "global_rules": "1、测试orders global rule",
+      "code": "1",
+      "name": "电商跨库客户与订单消费分析",
+      "description": "",
+      "global_rules": "客户档案和画像级别数据存储在 CRM 系统（运行在 **PostgreSQL** 上，便于处理半结构化数据和复杂画像关系），而高频订单交易明细存储在交易系统（运行在 **MySQL** 上，便于高并发事务写入）。",
       "catalogs": [
-        "postgres",
+        "postgresql",
         "mysql"
       ],
       "tables": [
-        "postgres.public.orders",
-        "mysql.mysql_db.brands"
+        "postgresql.public.crm_customers",
+        "mysql.agentic.mall_orders"
       ],
       "table_overrides": {
-        "postgres.public.orders": "订单表",
-        "mysql.mysql_db.brands": "品牌表"
+        "postgresql.public.crm_customers": "存储客户基础信息与客户等级",
+        "mysql.agentic.mall_orders": "存储订单金额、支付状态及下单时间"
       },
       "field_overrides": {
-        "postgres.public.orders": {
-          "brand_id": {
-            "description": "品牌id"
+        "postgresql.public.crm_customers": {
+          "name": {
+            "description": "客户姓名"
           },
-          "price": {
-            "description": "单价"
+          "email": {
+            "description": "客户邮箱"
           },
-          "qty": {
-            "description": "销售量"
+          "level": {
+            "description": "客户等级，'Bronze', 'Silver', 'Gold', 'Platinum'"
           },
-          "discount": {
-            "description": "折扣"
+          "register_date": {
+            "description": "注册日期"
           }
         },
-        "mysql.mysql_db.brands": {
-          "name": {
-            "description": "品牌名称"
+        "mysql.agentic.mall_orders": {
+          "order_id": {
+            "description": "订单ID"
           },
-          "country": {
-            "description": "品牌所属国家"
+          "customer_id": {
+            "description": "用户ID,关联crm_customers中的ID"
+          },
+          "total_amount": {
+            "description": "消费金额"
+          },
+          "order_status": {
+            "description": "订单状态，COMPLETED已完成，PENDING处理中"
+          },
+          "created_at": {
+            "description": "创建时间"
+          }
+        }
+      }
+    },
+    {
+      "code": "2",
+      "name": "HR 绩效评级与财务薪酬匹配分析",
+      "description": "",
+      "global_rules": "员工基本档案和季度绩效考核等级存储在 HR 人事管理数据库（运行在 **MySQL**），而敏感的工资发放明细和年终奖明细存储在财务系统（运行在 **PostgreSQL**，以确保数据安全）。",
+      "catalogs": [
+        "postgresql",
+        "mysql"
+      ],
+      "tables": [
+        "postgresql.public.fin_payroll",
+        "mysql.agentic.hr_employees"
+      ],
+      "table_overrides": {
+        "postgresql.public.fin_payroll": "存储月基本薪资、奖金",
+        "mysql.agentic.hr_employees": "存储员工姓名、部门、考评等级"
+      },
+      "field_overrides": {
+        "postgresql.public.fin_payroll": {
+          "emp_id": {
+            "description": "员工ID,hr_employees中的ID"
+          },
+          "base_salary": {
+            "description": "基础工资"
+          },
+          "bonus": {
+            "description": "奖金"
+          },
+          "pay_date": {
+            "description": "工资日期"
+          }
+        },
+        "mysql.agentic.hr_employees": {
+          "name": {
+            "description": "员工姓名"
+          },
+          "department": {
+            "description": "所属部门"
+          },
+          "performance_rating": {
+            "description": "绩效等级，A,B,C"
+          }
+        }
+      }
+    },
+    {
+      "code": "3",
+      "name": "IoT 设备台账与监控指标告警分析",
+      "description": "",
+      "global_rules": "物联网设备的基本出厂台账（设备型号、部署地点、厂商等）存放在 **MySQL** 资产管理表中；而设备采集的实时遥测温度和湿度指标通过流处理引擎快速汇入 **PostgreSQL**（时间序列存储）。",
+      "catalogs": [
+        "postgresql",
+        "mysql"
+      ],
+      "tables": [
+        "postgresql.public.device_telemetry",
+        "mysql.agentic.asset_registry"
+      ],
+      "table_overrides": {
+        "postgresql.public.device_telemetry": "温度、湿度等指标流",
+        "mysql.agentic.asset_registry": "设备台账 and 部署地点"
+      },
+      "field_overrides": {
+        "postgresql.public.device_telemetry": {
+          "device_sn": {
+            "description": "设备SN码"
+          },
+          "temperature": {
+            "description": "温度"
+          },
+          "humidity": {
+            "description": "湿度"
+          },
+          "recorded_at": {
+            "description": "记录时间"
+          }
+        },
+        "mysql.agentic.asset_registry": {
+          "device_sn": {
+            "description": "设备SN码"
+          },
+          "device_type": {
+            "description": "设备类型，'Sensor', 'Gateway', 'Controller'"
+          },
+          "installation_site": {
+            "description": "设备位置"
+          },
+          "status": {
+            "description": "设备状态，ACTIVE，MAINTENANCE"
           }
         }
       }
