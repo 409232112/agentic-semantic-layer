@@ -109,11 +109,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // 强制追加 Trino 网关层物理只读限制，确保任何物理库写事务都会被底层驱动直接拦截
-    const securedProperties = {
-      ...properties,
-      'metadata.read-only': 'true'
-    };
+    // 仅针对 PostgreSQL 强制追加只读限制 (MySQL 等其他连接器不支持此配置项，会报错)
+    const securedProperties: Record<string, string> = { ...properties };
+    if (connector === 'postgresql') {
+      securedProperties['metadata.read-only'] = 'true';
+    }
 
     // 格式化 WITH 子句属性
     const withClauses = Object.entries(securedProperties)
