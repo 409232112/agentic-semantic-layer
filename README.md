@@ -17,15 +17,10 @@
 * 支持 **Markdown（默认表格结构）** 与 **JSON（原始树状数据）** 双格式输出，默认采用对大模型理解最为友好的 Markdown 表格。
 * 将物理表元数据（Schema）、全局/表/字段业务语义与用户问题（Natural Language Question）动态拼装为完整的 **大模型 Prompt**，支持按需控制和复制。
 
-### 4. 交互式 SQL 沙盒与多重只读安全管控
-* 内置交互式 SQL 开发沙盒，支持多行编辑与 SQL 自动格式化。
-* **应用层安全限制**：如果不含 `LIMIT` 关键字的 SELECT 查询会自动默认追加 `LIMIT 10`。
-* **应用层写操作拦截**：严格拦截所有的 DDL/DML 写操作（如 `DROP`、`DELETE`、`UPDATE`、`INSERT` 等），防止修改物理库数据。
-* **网关层只读事务锁定**：在动态挂载 Catalog 时自动注入 `metadata.read-only = true` 参数。即使底层数据库物理账号拥有写入权限，网关驱动也会拦截并阻断一切写事务请求，保障数据绝对安全。
-
-### 5. 国密密码加密安全 (SM2 Encryption)
+### 4. 国密密码加密安全 (SM2 Encryption)
 * 配置文件 `semantic_config.json` 中的数据源密码采用 **国密 SM2 非对称加密** 算法。
 * 数据库密码以密文（以 `sm2:` 前缀标识）落盘，系统运行时在内存中自动使用私钥解密并进行动态数据源热挂载，保障凭证存储安全。
+
 
 ---
 
@@ -53,9 +48,9 @@
 
 ---
 
-### 2. 部署方案一：Docker Compose 一键本地部署 (Trino + Next.js)
+### 2. 部署与启动 (Trino + Next.js)
 
-如果您希望在本地或单台服务器上直接一键运行完整平台：
+通过 Docker Compose 一键启动完整平台：
 
 1. **构建 Next.js 生产镜像**：
    ```bash
@@ -68,53 +63,6 @@
    启动后：
    * 控制台前端地址：`http://localhost:3000`
    * Trino Coordinator 地址：`http://localhost:8080`
-
----
-
-### 3. 部署方案二：混合部署（Linux 运行 Trino 容器 + Windows 本地运行 Node 服务）
-
-如果您将 Trino 跑在 Linux 服务器（如 `192.168.0.165`）上，而前端 Node 服务跑在本地 Windows 开发机上进行开发调试：
-
-#### 第一步：在 Linux 服务器上启动 Trino 容器
-在服务器上运行以下命令（支持动态 Catalog 热挂载与宿主机卷挂载持久化）：
-```bash
-# 创建持久化 Catalog 的本地目录并授权
-mkdir -p /opt/trino-catalog && chmod 777 /opt/trino-catalog
-
-# 启动 Trino 容器
-docker run -d \
-  --name trino-coordinator \
-  -p 8080:8080 \
-  -e CATALOG_MANAGEMENT=dynamic \
-  -v /opt/trino-catalog:/etc/trino/catalog \
-  --restart always \
-  trinodb/trino:latest
-```
-
-#### 第二步：在 Windows 本地启动 Node.js 服务
-1. **安装 Node.js 依赖**：
-   打开 Windows 终端，在项目根目录下配置阿里镜像并安装依赖：
-   ```bash
-   npm config set registry https://registry.npmmirror.com
-   npm install
-   ```
-2. **配置环境变量**：
-   在项目根目录下创建一个 `.env.local` 文件，指定 Trino 的连接地址（替换为您的 Linux 服务器 IP）：
-   ```env
-   TRINO_URL=http://192.168.0.165:8080
-   ```
-3. **运行 Node 服务**：
-   * **开发模式 (运行热重载服务，推荐)**：
-     ```bash
-     npm run dev
-     ```
-     启动后访问：`http://localhost:3000`
-   * **生产模式 (编译并本地部署)**：
-     ```bash
-     npm run build
-     npm run start
-     ```
-     启动后访问：`http://localhost:3000`
 
 ---
 
