@@ -9,6 +9,8 @@ services:
       - "8080:8080"
     environment:
       - CATALOG_MANAGEMENT=dynamic
+    volumes:
+      - ./trino-catalog:/etc/trino/catalog
     restart: always
 
   # 2. Node.js 应用服务 (Next.js)
