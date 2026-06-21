@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local images
+pic1.png
+pic2.png
+
+# scratch tools
+/scratch
