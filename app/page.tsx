@@ -111,12 +111,68 @@ export default function WorkspaceConsole() {
   });
   const [dsStatusMsg, setDsStatusMsg] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [isDsSubmitting, setIsDsSubmitting] = useState(false);
+  const [isEditingDs, setIsEditingDs] = useState(false);
+  const [editingDsName, setEditingDsName] = useState('');
+
+  const startEditDatasource = (ds: any) => {
+    const connUrl = ds.properties['connection-url'] || '';
+    let host = 'localhost';
+    let port = ds.connector === 'mysql' ? '3306' : '5432';
+    let database = '';
+
+    try {
+      if (ds.connector === 'postgresql' && connUrl.startsWith('jdbc:postgresql://')) {
+        const cleanUrl = connUrl.replace('jdbc:postgresql://', '');
+        const [hostPort, dbName] = cleanUrl.split('/');
+        database = dbName || '';
+        const [h, p] = hostPort.split(':');
+        if (h) host = h;
+        if (p) port = p;
+      } else if (ds.connector === 'mysql' && connUrl.startsWith('jdbc:mysql://')) {
+        const cleanUrl = connUrl.replace('jdbc:mysql://', '');
+        const [hostPort, dbName] = cleanUrl.split('/');
+        database = dbName || '';
+        const [h, p] = hostPort.split(':');
+        if (h) host = h;
+        if (p) port = p;
+      }
+    } catch (err) {
+      console.error('Failed to parse connection URL during edit:', err);
+    }
+
+    setDsForm({
+      name: ds.name,
+      connector: ds.connector,
+      host,
+      port,
+      user: ds.properties['connection-user'] || '',
+      password: '',
+      database
+    });
+    setIsEditingDs(true);
+    setEditingDsName(ds.name);
+    setDsStatusMsg(null);
+  };
+
+  const cancelEditDatasource = () => {
+    setDsForm({ name: '', connector: 'postgresql', host: 'localhost', port: '5432', user: 'postgres', password: 'postgres', database: 'postgres' });
+    setIsEditingDs(false);
+    setEditingDsName('');
+    setDsStatusMsg(null);
+  };
 
   const handleDsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsDsSubmitting(true);
     setDsStatusMsg(null);
     try {
+      if (isEditingDs && editingDsName) {
+        const delRes = await fetch(`/api/datasource?name=${editingDsName}`, { method: 'DELETE' });
+        const delData = await delRes.json();
+        if (!delData.success) {
+          throw new Error(`更新失败，无法卸载旧数据源: ${delData.error}`);
+        }
+      }
       // 拼装不同 connector 的 properties
       let properties: Record<string, string> = {};
       if (dsForm.connector === 'postgresql') {
@@ -240,11 +296,6 @@ export default function WorkspaceConsole() {
   };
 
   const handleDeleteDatasource = async (name: string) => {
-    const systemPreset = ['postgresql', 'mysql', 'redis', 'mongodb'];
-    if (systemPreset.includes(name)) {
-      await customAlert(`系统内置物理数据源 "${name}" 不允许删除`, '/// 警告: 越权删除拦截');
-      return;
-    }
     const confirmed = await customConfirm(`确认要卸载物理数据源 "${name}" 吗？此操作将在 Trino 动态注销 Catalog，已选定此数据源的分析场景将可能无法读取该 Catalog 下的物理表。`, '/// 数据源卸载确认');
     if (!confirmed) return;
     
@@ -1383,20 +1434,28 @@ export default function WorkspaceConsole() {
                           </div>
                         </div>
                         <div className="flex flex-col items-end space-y-2">
-                          <div className="flex items-center space-x-1.5 border border-[#4af626]/20 bg-[#4af626]/5 text-[#4af626] px-2 py-0.5 text-[9px] font-mono font-bold uppercase">
+                          <div className="flex items-center space-x-1.5 border border-[#4af626]/20 bg-[#4af626]/5 text-[#4af626] px-2 py-0.5 text-[9px] font-mono font-bold uppercase whitespace-nowrap">
                             <Check size={8} />
                             <span>已连接 / CONNECTED</span>
                           </div>
-                          {!['postgresql', 'mysql', 'redis', 'mongodb'].includes(ds.name) && (
+                          <div className="flex flex-col items-end space-y-1 mt-1">
+                            <button
+                              onClick={() => startEditDatasource(ds)}
+                              className="flex items-center space-x-1 text-[10px] font-mono text-emerald-400 hover:text-emerald-350 cursor-pointer border border-emerald-500/20 px-2 py-0.5 hover:bg-emerald-500/5"
+                              title="编辑物理数据源"
+                            >
+                              <PencilSimple size={10} />
+                              <span>[ 编辑 / EDIT ]</span>
+                            </button>
                             <button
                               onClick={() => handleDeleteDatasource(ds.name)}
-                              className="flex items-center space-x-1 text-[10px] font-mono text-rose-500 hover:text-rose-400 cursor-pointer border border-rose-500/20 px-2 py-0.5 hover:bg-rose-500/5 mt-1"
+                              className="flex items-center space-x-1 text-[10px] font-mono text-rose-500 hover:text-rose-400 cursor-pointer border border-rose-500/20 px-2 py-0.5 hover:bg-rose-500/5"
                               title="卸载物理数据源"
                             >
                               <Trash size={10} />
                               <span>[ 卸载 / UNMOUNT ]</span>
                             </button>
-                          )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -1406,7 +1465,7 @@ export default function WorkspaceConsole() {
                 {/* Right: Mount Form */}
                 <div className="p-6 overflow-y-auto bg-[#0a0a0c]/40">
                   <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center space-x-2 font-mono">
-                    <span>&gt;&gt;&gt; 热挂载新物理数据源 CATALOG</span>
+                    <span>{isEditingDs ? `>>> 编辑物理数据源 CATALOG: ${editingDsName}` : '>>> 热挂载新物理数据源 CATALOG'}</span>
                   </h2>
                   <form onSubmit={handleDsSubmit} className="space-y-4 max-w-lg font-mono text-xs">
                     <div>
@@ -1414,10 +1473,11 @@ export default function WorkspaceConsole() {
                       <input 
                         type="text" 
                         required 
+                        readOnly={isEditingDs}
                         placeholder="oracle_db, mysql_replica"
                         value={dsForm.name} 
                         onChange={e => setDsForm({ ...dsForm, name: e.target.value.toLowerCase() })}
-                        className="w-full p-2 bg-[#070709] border border-slate-800 focus:border-[#ff2a2a] text-slate-200 outline-none rounded-none font-mono placeholder-slate-650"
+                        className={`w-full p-2 bg-[#070709] border border-slate-800 focus:border-[#ff2a2a] text-slate-200 outline-none rounded-none font-mono placeholder-slate-650 ${isEditingDs ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />
                     </div>
                     
@@ -1507,14 +1567,25 @@ export default function WorkspaceConsole() {
                       </div>
                     )}
 
-                    <button 
-                      type="submit" 
-                      disabled={isDsSubmitting}
-                      className="w-full bg-[#ff2a2a] text-black font-bold text-xs py-2 hover:bg-[#ff4d4d] cursor-pointer flex items-center justify-center space-x-1"
-                    >
-                      {isDsSubmitting ? <ArrowCounterClockwise className="animate-spin" size={12} /> : <Check size={12} />}
-                      <span>{isDsSubmitting ? '正在挂载...' : '确认热挂载新物理数据源'}</span>
-                    </button>
+                    <div className="flex space-x-2">
+                      <button 
+                        type="submit" 
+                        disabled={isDsSubmitting}
+                        className="flex-1 bg-[#ff2a2a] text-black font-bold text-xs py-2 hover:bg-[#ff4d4d] cursor-pointer flex items-center justify-center space-x-1"
+                      >
+                        {isDsSubmitting ? <ArrowCounterClockwise className="animate-spin" size={12} /> : <Check size={12} />}
+                        <span>{isDsSubmitting ? '正在提交...' : (isEditingDs ? '确认保存修改' : '确认热挂载新物理数据源')}</span>
+                      </button>
+                      {isEditingDs && (
+                        <button 
+                          type="button"
+                          onClick={cancelEditDatasource}
+                          className="bg-transparent text-slate-400 border border-white/10 font-bold text-xs px-4 py-2 hover:text-white hover:border-white/20 cursor-pointer"
+                        >
+                          取消编辑
+                        </button>
+                      )}
+                    </div>
                     
                     {dsStatusMsg && (
                       <div className={`p-3 border text-[11px] font-mono flex items-start space-x-2 ${dsStatusMsg.type === 'success' ? 'bg-[#4af626]/10 border-[#4af626]/30 text-[#4af626]' : 'bg-[#ff2a2a]/10 border-[#ff2a2a]/30 text-[#ff2a2a]'}`}>
