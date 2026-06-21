@@ -1421,41 +1421,41 @@ export default function WorkspaceConsole() {
                   </h2>
                   <div className="space-y-3">
                     {datasources.map(ds => (
-                      <div key={ds.name} className="bg-[#121215] border border-white/5 p-4 flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-bold text-sm text-slate-100 font-mono">{ds.name.toUpperCase()}</span>
-                            <span className="text-[10px] font-mono text-[#ff2a2a] border border-[#ff2a2a]/30 bg-[#ff2a2a]/5 px-1.5 py-0.5 uppercase">{ds.connector}</span>
+                      <div key={ds.name} className="bg-[#121215] border border-white/5 p-4 flex flex-col justify-between space-y-3">
+                        <div className="flex items-start justify-between space-x-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-bold text-sm text-slate-100 font-mono">{ds.name.toUpperCase()}</span>
+                              <span className="text-[10px] font-mono text-[#ff2a2a] border border-[#ff2a2a]/30 bg-[#ff2a2a]/5 px-1.5 py-0.5 uppercase">{ds.connector}</span>
+                            </div>
+                            <div className="mt-2 text-[11px] font-mono text-slate-500 space-y-1 break-all">
+                              {Object.entries(ds.properties).map(([k, v]) => (
+                                <div key={k}><span className="text-slate-400">{k}:</span> {String(v)}</div>
+                              ))}
+                            </div>
                           </div>
-                          <div className="mt-2 text-[11px] font-mono text-slate-500 space-y-1">
-                            {Object.entries(ds.properties).map(([k, v]) => (
-                              <div key={k}><span className="text-slate-400">{k}:</span> {String(v)}</div>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end space-y-2">
                           <div className="flex items-center space-x-1.5 border border-[#4af626]/20 bg-[#4af626]/5 text-[#4af626] px-2 py-0.5 text-[9px] font-mono font-bold uppercase whitespace-nowrap">
                             <Check size={8} />
                             <span>已连接 / CONNECTED</span>
                           </div>
-                          <div className="flex flex-col items-end space-y-1 mt-1">
-                            <button
-                              onClick={() => startEditDatasource(ds)}
-                              className="flex items-center space-x-1 text-[10px] font-mono text-emerald-400 hover:text-emerald-350 cursor-pointer border border-emerald-500/20 px-2 py-0.5 hover:bg-emerald-500/5"
-                              title="编辑物理数据源"
-                            >
-                              <PencilSimple size={10} />
-                              <span>[ 编辑 / EDIT ]</span>
-                            </button>
-                            <button
-                              onClick={() => handleDeleteDatasource(ds.name)}
-                              className="flex items-center space-x-1 text-[10px] font-mono text-rose-500 hover:text-rose-400 cursor-pointer border border-rose-500/20 px-2 py-0.5 hover:bg-rose-500/5"
-                              title="卸载物理数据源"
-                            >
-                              <Trash size={10} />
-                              <span>[ 卸载 / UNMOUNT ]</span>
-                            </button>
-                          </div>
+                        </div>
+                        <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-white/5">
+                          <button
+                            onClick={() => startEditDatasource(ds)}
+                            className="flex items-center space-x-1 text-[10px] font-mono text-slate-350 hover:text-emerald-400 cursor-pointer border border-white/10 hover:border-emerald-500/30 bg-white/5 hover:bg-emerald-500/5 px-2.5 py-1 transition-all duration-150 whitespace-nowrap"
+                            title="编辑物理数据源"
+                          >
+                            <PencilSimple size={11} />
+                            <span>编辑 / EDIT</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteDatasource(ds.name)}
+                            className="flex items-center space-x-1 text-[10px] font-mono text-rose-500 hover:text-rose-450 cursor-pointer border border-rose-500/20 hover:border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 px-2.5 py-1 transition-all duration-150 whitespace-nowrap"
+                            title="卸载物理数据源"
+                          >
+                            <Trash size={11} />
+                            <span>卸载 / UNMOUNT</span>
+                          </button>
                         </div>
                       </div>
                     ))}
