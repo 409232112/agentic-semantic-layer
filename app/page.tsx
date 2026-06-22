@@ -1833,17 +1833,6 @@ export default function WorkspaceConsole() {
 
 
                     <div>
-                      <label className="block text-[10px] text-slate-400 mb-1">场景大模型生成规则与注意事项 / GLOBAL PROMPT RULES</label>
-                      <textarea 
-                        rows={4}
-                        placeholder="例如: 1. 金额计算公式统一为 price * qty - discount. 2. 查询默认使用当前年份..."
-                        value={scForm.global_rules} 
-                        onChange={e => setScForm({ ...scForm, global_rules: e.target.value })}
-                        className="w-full p-2 bg-[#070709] border border-slate-800 focus:border-[#ff2a2a] text-slate-200 outline-none rounded-none font-mono placeholder-slate-650"
-                      />
-                    </div>
-
-                    <div>
                       <label className="block text-[10px] text-slate-400 mb-2">配置场景数据访问范围 / SELECT CATALOGS & TABLES (树形勾选)</label>
                       <div className="space-y-3 max-h-80 overflow-y-auto border border-white/10 p-3 bg-[#050507]">
                         {isScenarioTreeLoading ? (
