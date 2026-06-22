@@ -449,8 +449,7 @@ export default function WorkspaceConsole() {
       
       if (phyData.success) {
         const physicalColumns = phyData.columns || [];
-        // 从 system metadata (Trino) 中我们没有表级别原始 comment，但我们可以尝试描述，或者暂时默认为物理表
-        setPhysicalTableComment(`物理数据表: ${fullTableName}`);
+        setPhysicalTableComment(phyData.comment || '暂无原始物理注释');
         
         // 融合同步物理字段
         const fieldsList = physicalColumns.map((col: any) => {
@@ -1018,6 +1017,16 @@ export default function WorkspaceConsole() {
                         type="text" 
                         readOnly 
                         value={`${activeTable.catalog}.${activeTable.schema}.${activeTable.table}`} 
+                        className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-slate-400 font-mono disabled:opacity-50" 
+                        disabled
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[10px] text-slate-400 uppercase font-bold">原始物理表注释 / ORIGINAL PHYSICAL COMMENT</label>
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value={physicalTableComment} 
                         className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-slate-400 font-mono disabled:opacity-50" 
                         disabled
                       />

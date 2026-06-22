@@ -25,7 +25,23 @@ export async function GET(request: Request) {
         extra: row[2] as string,
         comment: row[3] as string
       }));
-      return NextResponse.json({ success: true, columns });
+
+      let comment = '';
+      try {
+        const commentRes = await runTrinoQuery(
+          `SELECT comment FROM system.metadata.table_comments 
+           WHERE catalog_name = '${catalog}' 
+             AND schema_name = '${schema}' 
+             AND table_name = '${table}'`
+        );
+        if (commentRes.data && commentRes.data.length > 0) {
+          comment = commentRes.data[0][0] as string || '';
+        }
+      } catch (err) {
+        console.error('Failed to fetch table comment from Trino:', err);
+      }
+
+      return NextResponse.json({ success: true, columns, comment });
     }
 
     // 场景 2：获取某个 Schema 下的所有表
