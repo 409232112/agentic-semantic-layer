@@ -801,7 +801,7 @@ export default function WorkspaceConsole() {
             <div className="w-2.5 h-2.5 bg-[#ff2a2a] animate-pulse" />
             <div className="flex flex-col">
               <span className="text-[11.5px] font-bold tracking-[0.1em] text-[#eaeaea] uppercase font-mono whitespace-nowrap">[ AGENTIC SEMANTIC LAYER ]</span>
-              <span className="text-[9.5px] font-mono text-[#ff2a2a] uppercase tracking-widest leading-none mt-0.5">系统版本: 3.8.2</span>
+              <span className="text-[9.5px] font-mono text-[#ff2a2a] uppercase tracking-widest leading-none mt-0.5">系统版本: 1.0.0</span>
             </div>
           </div>
 
@@ -920,7 +920,7 @@ export default function WorkspaceConsole() {
           <div className="flex items-center justify-between text-[9px] font-mono text-slate-500">
             <span>TRINO 服务端</span>
             <span className="text-[#4af626] font-bold uppercase flex items-center">
-              <Check size={8} className="mr-0.5 text-[#4af626]" /> 在线 / ONLINE
+              在线 / ONLINE
             </span>
           </div>
         </div>
