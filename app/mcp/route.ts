@@ -111,12 +111,28 @@ function createMcpServer(): McpServer {
             console.error(`Failed to describe table ${tableName}:`, describeErr);
           }
 
+          let physicalTableComment = '';
+          try {
+            const commentRes = await runTrinoQuery(
+              `SELECT comment FROM system.metadata.table_comments 
+               WHERE catalog_name = '${catalog}' 
+                 AND schema_name = '${schema}' 
+                 AND table_name = '${table}'`
+            );
+            if (commentRes.data && commentRes.data.length > 0) {
+              physicalTableComment = (commentRes.data[0][0] as string || '').trim();
+            }
+          } catch (err) {
+            console.error(`Failed to fetch table comment for ${tableName}:`, err);
+          }
+
           const customTableDesc = (sc.table_overrides?.[tableName] || '').trim();
           const tableEntry: Record<string, any> = {
             table_name: tableName,
             columns
           };
           if (customTableDesc) tableEntry.custom_description = customTableDesc;
+          if (physicalTableComment) tableEntry.physical_comment = physicalTableComment;
           contextTables.push(tableEntry);
         }
 
@@ -134,6 +150,8 @@ function createMcpServer(): McpServer {
           
           contextTables.forEach(t => {
             outputText += `### 物理表: ${t.table_name}\n`;
+            const phyComment = t.physical_comment ? t.physical_comment.trim() : '无';
+            outputText += `*原始物理注释 / ORIGINAL PHYSICAL COMMENT:* ${escapeMdCell(phyComment)}\n`;
             const tableDesc = t.custom_description ? t.custom_description.trim() : '无';
             outputText += `*表业务描述:* ${escapeMdCell(tableDesc)}\n\n`;
             

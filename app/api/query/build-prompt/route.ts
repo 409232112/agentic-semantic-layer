@@ -42,12 +42,28 @@ export async function POST(request: Request) {
         console.error(`Describe table ${tableName} failed:`, err);
       }
 
+      let physicalTableComment = '';
+      try {
+        const commentRes = await runTrinoQuery(
+          `SELECT comment FROM system.metadata.table_comments 
+           WHERE catalog_name = '${catalog}' 
+             AND schema_name = '${schema}' 
+             AND table_name = '${table}'`
+        );
+        if (commentRes.data && commentRes.data.length > 0) {
+          physicalTableComment = (commentRes.data[0][0] as string || '').trim();
+        }
+      } catch (err) {
+        console.error(`Failed to fetch table comment for ${tableName}:`, err);
+      }
+
       const customTableDesc = (sc.table_overrides?.[tableName] || '').trim();
       const tableEntry: Record<string, any> = {
         table_name: tableName,
         columns
       };
       if (customTableDesc) tableEntry.custom_description = customTableDesc;
+      if (physicalTableComment) tableEntry.physical_comment = physicalTableComment;
       contextTables.push(tableEntry);
     }
 
@@ -63,6 +79,8 @@ export async function POST(request: Request) {
     if (promptFormat === 'markdown') {
       metadataString = contextTables.map(t => {
         let md = `### 物理表: ${t.table_name}\n`;
+        const phyComment = t.physical_comment ? t.physical_comment.trim() : '无';
+        md += `*原始物理注释 / ORIGINAL PHYSICAL COMMENT:* ${escapeMdCell(phyComment)}\n`;
         const tableDesc = t.custom_description ? t.custom_description.trim() : '无';
         md += `*表业务描述:* ${escapeMdCell(tableDesc)}\n\n`;
         
@@ -98,10 +116,13 @@ ${metadataString}
 User Question: "${userPrompt || '无'}"
 
 Important Rules:
-1. Return ONLY standard ANSI SQL (Trino dialect) that can be executed.
-2. Tables MUST be referenced with their fully-qualified names: catalog.schema.table.
-3. Do not modify data; only write SELECT statements.
-4. Put the SQL inside a markdown code block: \`\`\`sql\n...\n\`\`\``;
+1. If the user's request can be resolved in a single query, return ONLY that SQL inside a markdown code block: \`\`\`sql\n...\n\`\`\`.
+2. If the user's request involves multiple questions, multi-step analysis, or comparisons that cannot be efficiently queried in one statement, you should:
+   a. Write multiple separate SQL statements, each wrapped in its own \`\`\`sql ... \`\`\` markdown code block.
+   b. Provide a clear, step-by-step description of how these queries should be run and combined to answer the user's intent.
+3. Tables MUST be referenced with their fully-qualified names: catalog.schema.table.
+4. Do not modify data; only write SELECT statements.
+5. Put each SQL query inside a markdown code block: \`\`\`sql\n...\n\`\`\``;
 
     return NextResponse.json({
       success: true,
