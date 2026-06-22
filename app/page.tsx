@@ -66,6 +66,44 @@ export default function WorkspaceConsole() {
     });
   };
 
+  const fallbackCopy = (text: string) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        customAlert("Prompt 已成功复制到剪贴板！ (兼容模式)", "/// 复制成功");
+      } else {
+        customAlert("复制失败，请手动选择复制。", "/// 复制失败");
+      }
+    } catch (err) {
+      console.error('Fallback copy failed:', err);
+      customAlert("复制失败，请手动选择复制。", "/// 复制失败");
+    }
+    document.body.removeChild(textArea);
+  };
+
+  const copyToClipboard = (text: string) => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          customAlert("Prompt 已成功复制到剪贴板！", "/// 复制成功");
+        })
+        .catch(err => {
+          console.error("Clipboard write failed, trying fallback:", err);
+          fallbackCopy(text);
+        });
+    } else {
+      fallbackCopy(text);
+    }
+  };
+
   // ==========================================
   // 共享/全局状态
   // ==========================================
@@ -817,7 +855,7 @@ export default function WorkspaceConsole() {
               }`}
             >
               <Play size={14} className={activeTab === 'sql_sandbox' && selectedScenario ? 'text-[#ff2a2a]' : 'text-slate-500'} />
-              <span>[ 5. SQL 查询沙盒测试 ]</span>
+              <span>[ 5. SQL 查询测试 ]</span>
             </button>
           </nav>
         </div>
@@ -1224,8 +1262,7 @@ export default function WorkspaceConsole() {
                     </span>
                     <button 
                       onClick={() => {
-                        navigator.clipboard.writeText(testGeneratedPrompt);
-                        customAlert("Prompt 已成功复制到剪贴板！", "/// 复制成功");
+                        copyToClipboard(testGeneratedPrompt);
                       }}
                       className="text-[9px] text-[#ff2a2a] hover:underline font-bold"
                     >
