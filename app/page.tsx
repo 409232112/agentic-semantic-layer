@@ -412,7 +412,7 @@ export default function WorkspaceConsole() {
   
   const [activeScenarioRules, setActiveScenarioRules] = useState<string>('');
   
-  // 语义生成测试 & SQL沙盒相关状态
+  // 语义生成测试 & SQL查询测试相关状态
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [testGeneratedPrompt, setTestGeneratedPrompt] = useState('');
   const [promptFormat, setPromptFormat] = useState<'markdown' | 'json'>('markdown');
@@ -644,7 +644,7 @@ export default function WorkspaceConsole() {
     }
   };
 
-  // 执行 SQL 沙盒查询
+  // 执行 SQL 查询测试
   const handleExecuteSqlSandbox = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sqlSandboxInput.trim()) return;
@@ -707,7 +707,7 @@ export default function WorkspaceConsole() {
   };
 
   // ==========================================
-  // 4. AI 调试沙盒 Tab 状态与逻辑
+  // 4. AI 调试测试 Tab 状态与逻辑
   // ==========================================
   // 模拟终端对话数据
   const [chatLog, setChatLog] = useState<Array<{ sender: 'user' | 'agent', text: string, type?: 'thought' | 'action' | 'result' }>>([
@@ -899,7 +899,7 @@ export default function WorkspaceConsole() {
               <span>[ 4. 语义生成测试 ]</span>
             </button>
 
-            {/* 5. SQL 查询沙盒测试 */}
+            {/* 5. SQL 查询测试 */}
             <button
               onClick={() => selectedScenario && setActiveTab('sql_sandbox')}
               disabled={!selectedScenario}
@@ -939,7 +939,7 @@ export default function WorkspaceConsole() {
               {activeTab === 'table_rules' && '/// 表级别语义设定'}
               {activeTab === 'field_rules' && '/// 表字段语义设定'}
               {activeTab === 'semantic_test' && '/// 语义生成测试'}
-              {activeTab === 'sql_sandbox' && '/// SQL 查询沙盒测试'}
+              {activeTab === 'sql_sandbox' && '/// SQL 查询测试'}
             </h1>
           </div>
  
@@ -972,7 +972,7 @@ export default function WorkspaceConsole() {
                 </div>
                 <h3 className="text-xs font-mono uppercase tracking-wider text-slate-300 mb-2 font-bold animate-pulse">未选定分析场景 / No Active Scenario</h3>
                 <p className="text-xs text-slate-500 mb-6 max-w-xs leading-relaxed">
-                  语义层设计与沙盒调试必须基于特定的业务场景。请在左侧侧边栏中选择一个已激活的分析场景，或前往“分析场景定义”创建新场景。
+                  语义层设计与查询测试必须基于特定的业务场景。请在左侧侧边栏中选择一个已激活的分析场景，或前往“分析场景定义”创建新场景。
                 </p>
                 <button
                   onClick={() => {
@@ -1409,7 +1409,7 @@ export default function WorkspaceConsole() {
           </div>
         )}
 
-        {/* 5. SQL 查询沙盒测试 */}
+        {/* 5. SQL 查询测试 */}
         {activeTab === 'sql_sandbox' && selectedScenario && (
           <div className="w-full h-full flex flex-col overflow-hidden bg-slate-950 p-4 font-mono text-xs space-y-4">
             {/* 上半部分：SQL 编辑面板 */}

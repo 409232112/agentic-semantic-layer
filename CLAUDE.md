@@ -40,7 +40,7 @@ docker compose up -d
 
 | 路径 | 作用 |
 |------|------|
-| `app/page.tsx` | 单页控制台应用，包含全部 5 个 Tab：全局规则、表规则、字段规则、语义测试、SQL 沙盒，以及数据源和场景配置的弹窗模态框 |
+| `app/page.tsx` | 单页控制台应用，包含全部 5 个 Tab：全局规则、表规则、字段规则、语义测试、SQL 查询测试，以及数据源和场景配置的弹窗模态框 |
 | `app/layout.tsx` | 根布局。启动时自动调用 `readConfig()` 初始化配置文件 |
 | `lib/config.ts` | 配置数据模型（`DataSource`、`Scenario`、`ConfigData`）+ `readConfig()`/`writeConfig()` 读写 `data/semantic_config.json` |
 | `lib/trino.ts` | `runTrinoQuery()` - Trino Statement API 客户端（带 `nextUri` 轮询）；`explainQuery()` - 执行前 EXPLAIN 预检语法校验 |
@@ -48,7 +48,7 @@ docker compose up -d
 | `app/api/scenario/route.ts` | 场景 CRUD：增删改业务场景到 `semantic_config.json`，保留旧的场景表/字段语义覆盖 |
 | `app/api/semantics/route.ts` | 语义覆盖层：GET 获取场景的表和字段级语义修正，POST 增量合并更新 |
 | `app/api/semantics/schema/route.ts` | 物理 Schema 浏览器：DESCRIBE 表字段、SHOW TABLES、SHOW SCHEMAS，从 Trino 动态拉取 |
-| `app/api/query/execute/route.ts` | SQL 沙盒执行：DDL/DML 拦截防护、EXPLAIN 预检、智能自愈错误建议 |
+| `app/api/query/execute/route.ts` | SQL 查询测试执行 DDL/DML 拦截防护、EXPLAIN 预检、智能自愈错误建议 |
 | `app/api/query/build-prompt/route.ts` | Prompt 组装器：拉取当前场景的 Schema + 语义覆盖 + 全局规则，拼装为 ANSI SQL (Trino 方言) 提示词 |
 | `app/mcp/route.ts` | MCP 服务器（Model Context Protocol）：对外暴露 3 个工具（`list_scenarios`、`get_scenario_context`、`execute_federated_query`），供 Cursor/Claude Desktop 等 AI 客户端调用。使用 WebStandardStreamableHTTPServerTransport |
 | `data/semantic_config.json` | 持久化配置文件，含数据源和场景列表。首次启动时由 `DEFAULT_CONFIG` 自动初始化 |
