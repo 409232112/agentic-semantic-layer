@@ -481,7 +481,7 @@ export default function WorkspaceConsole() {
       setActiveTable(null);
       setSemanticFields([]);
     }
-  }, [activeTab, selectedScenario, scenarios]);
+  }, [activeTab, selectedScenario]);
 
   const [activeTableDesc, setActiveTableDesc] = useState<string>('');
   const [physicalTableComment, setPhysicalTableComment] = useState<string>('');
@@ -575,8 +575,6 @@ export default function WorkspaceConsole() {
       const data = await res.json();
       if (data.success) {
         await customAlert('语义层配置与场景全局规则保存成功！已更新至本地存储。', '/// 保存成功');
-        await refreshMetadata();
-        handleTableClick(activeTable.catalog, activeTable.schema, activeTable.table);
       } else {
         await customAlert('保存失败: ' + data.error, '/// 保存失败');
       }
