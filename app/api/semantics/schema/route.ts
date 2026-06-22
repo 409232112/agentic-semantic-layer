@@ -55,6 +55,24 @@ export async function GET(request: Request) {
     const schemasRes = await runTrinoQuery(`SHOW SCHEMAS FROM ${catalog}`);
     const schemasList = schemasRes.data.map(row => row[0] as string);
     
+    // 预先拉取该 catalog 下所有表的注释
+    const commentsMap: Record<string, string> = {};
+    try {
+      const commentsRes = await runTrinoQuery(
+        `SELECT schema_name, table_name, comment FROM system.metadata.table_comments WHERE catalog_name = '${catalog}'`
+      );
+      if (commentsRes && commentsRes.data) {
+        for (const row of commentsRes.data) {
+          const sName = row[0] as string;
+          const tName = row[1] as string;
+          const comment = row[2] as string || '';
+          commentsMap[`${sName}.${tName}`] = comment;
+        }
+      }
+    } catch (commentErr) {
+      console.warn(`Could not fetch table comments for catalog ${catalog}:`, commentErr);
+    }
+    
     const tree = [];
 
     for (const sch of schemasList) {
@@ -70,9 +88,15 @@ export async function GET(request: Request) {
         console.warn(`Could not show tables for ${catalog}.${sch}:`, tableErr);
       }
 
+      const tablesInfo = tables.map(tName => ({
+        name: tName,
+        comment: commentsMap[`${sch}.${tName}`] || ''
+      }));
+
       tree.push({
         name: sch,
-        tables
+        tables,
+        tablesInfo
       });
     }
 

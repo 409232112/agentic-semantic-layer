@@ -274,6 +274,7 @@ export default function WorkspaceConsole() {
   const [scStatusMsg, setScStatusMsg] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [isEditingScenario, setIsEditingScenario] = useState(false);
   const [availableTree, setAvailableTree] = useState<any[]>([]);
+  const [treeSearchQuery, setTreeSearchQuery] = useState('');
 
   // 监听 datasources 列表，为可供选择的数据源和表结构建立树状节点结构
   useEffect(() => {
@@ -302,9 +303,67 @@ export default function WorkspaceConsole() {
       }
     };
     if (showScenarioSettings && datasources.length > 0) {
+      setTreeSearchQuery('');
       fetchTreeMetadata();
     }
   }, [showScenarioSettings, datasources]);
+
+  // 过滤展示的库表结构树
+  const getFilteredAvailableTree = () => {
+    const query = treeSearchQuery.trim().toLowerCase();
+    if (!query) {
+      return availableTree.map(catNode => ({
+        ...catNode,
+        schemas: catNode.schemas.map((sch: any) => ({
+          ...sch,
+          displayTables: (sch.tablesInfo || sch.tables || []).map((t: any) => {
+            if (typeof t === 'string') {
+              return { name: t, comment: '' };
+            }
+            return t;
+          })
+        }))
+      }));
+    }
+
+    return availableTree.map(catNode => {
+      const catalogMatch = catNode.catalog.toLowerCase().includes(query) || (catNode.connector || '').toLowerCase().includes(query);
+      
+      const filteredSchemas = catNode.schemas.map((sch: any) => {
+        const schemaMatch = sch.name.toLowerCase().includes(query);
+        
+        const rawTables = sch.tablesInfo || sch.tables || [];
+        const filteredTables = rawTables.map((t: any) => {
+          if (typeof t === 'string') {
+            return { name: t, comment: '' };
+          }
+          return t;
+        }).filter((t: any) => {
+          const nameMatch = t.name.toLowerCase().includes(query);
+          const commentMatch = (t.comment || '').toLowerCase().includes(query);
+          return catalogMatch || schemaMatch || nameMatch || commentMatch;
+        });
+
+        if (catalogMatch || schemaMatch || filteredTables.length > 0) {
+          return {
+            ...sch,
+            displayTables: filteredTables
+          };
+        }
+        return null;
+      }).filter(Boolean);
+
+      if (catalogMatch || filteredSchemas.length > 0) {
+        return {
+          ...catNode,
+          schemas: filteredSchemas
+        };
+      }
+      return null;
+    }).filter(Boolean) as any[];
+  };
+
+  const displayAvailableTree = getFilteredAvailableTree();
 
   const handleScSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1834,6 +1893,15 @@ export default function WorkspaceConsole() {
 
                     <div>
                       <label className="block text-[10px] text-slate-400 mb-2">配置场景数据访问范围 / SELECT CATALOGS & TABLES (树形勾选)</label>
+                      <div className="mb-2">
+                        <input
+                          type="text"
+                          placeholder="输入关键字搜索 Catalog / Schema / 表名 / 注释..."
+                          value={treeSearchQuery}
+                          onChange={e => setTreeSearchQuery(e.target.value)}
+                          className="w-full p-2 text-xs bg-[#070709] border border-slate-800 focus:border-[#ff2a2a] text-slate-200 outline-none rounded-none font-mono placeholder-slate-650"
+                        />
+                      </div>
                       <div className="space-y-3 max-h-80 overflow-y-auto border border-white/10 p-3 bg-[#050507]">
                         {isScenarioTreeLoading ? (
                           <div className="flex items-center space-x-2 text-[10px] font-mono text-slate-500 py-3 animate-pulse">
@@ -1842,8 +1910,10 @@ export default function WorkspaceConsole() {
                           </div>
                         ) : availableTree.length === 0 ? (
                           <div className="text-[10px] font-mono text-slate-500 italic py-2">暂无可用数据源，请确保至少成功挂载一个 Catalog。</div>
+                        ) : displayAvailableTree.length === 0 ? (
+                          <div className="text-[10px] font-mono text-slate-500 italic py-2">无匹配的搜索结果 / NO MATCHES FOUND</div>
                         ) : (
-                          availableTree.map(catNode => {
+                          displayAvailableTree.map(catNode => {
                             const catChecked = scForm.catalogs.includes(catNode.catalog);
                             return (
                               <div key={catNode.catalog} className="space-y-1">
@@ -1886,7 +1956,8 @@ export default function WorkspaceConsole() {
                                         </div>
 
                                         <div className="pl-4 border-l border-white/5 ml-1.5 space-y-1">
-                                          {sch.tables && sch.tables.map((tName: string) => {
+                                          {sch.displayTables && sch.displayTables.map((tbl: any) => {
+                                            const tName = tbl.name;
                                             const fullPath = `${catNode.catalog}.${sch.name}.${tName}`;
                                             const tblChecked = scForm.tables.includes(fullPath);
                                             return (
@@ -1898,13 +1969,23 @@ export default function WorkspaceConsole() {
                                                     : [...scForm.tables, fullPath];
                                                   setScForm(prev => ({ ...prev, tables: nextTables }));
                                                 }}
-                                                className="flex items-center space-x-2 cursor-pointer select-none py-0.5 group"
+                                                className="flex items-center justify-between cursor-pointer select-none py-0.5 group"
                                               >
-                                                <div className={`w-3 h-3 border transition-colors flex items-center justify-center ${tblChecked ? 'border-[#ff2a2a] bg-[#ff2a2a]/15 text-[#ff2a2a]' : 'border-white/20 bg-transparent text-transparent group-hover:border-white/40'}`}>
-                                                  {tblChecked && <Check size={8} weight="bold" />}
+                                                <div className="flex items-center space-x-2">
+                                                  <div className={`w-3 h-3 border transition-colors flex items-center justify-center ${tblChecked ? 'border-[#ff2a2a] bg-[#ff2a2a]/15 text-[#ff2a2a]' : 'border-white/20 bg-transparent text-transparent group-hover:border-white/40'}`}>
+                                                    {tblChecked && <Check size={8} weight="bold" />}
+                                                  </div>
+                                                  <TableIcon size={10} className="text-slate-500" />
+                                                  <span className={`font-mono text-[11px] transition-colors ${tblChecked ? 'text-[#ff2a2a]' : 'text-slate-505 group-hover:text-slate-355'}`}>{tName}</span>
                                                 </div>
-                                                <TableIcon size={10} className="text-slate-500" />
-                                                <span className={`font-mono text-[11px] transition-colors ${tblChecked ? 'text-[#ff2a2a]' : 'text-slate-505 group-hover:text-slate-355'}`}>{tName}</span>
+                                                {tbl.comment && (
+                                                  <span 
+                                                    title={tbl.comment}
+                                                    className="text-[9.5px] text-slate-500 font-mono italic truncate max-w-[180px] ml-2 select-none"
+                                                  >
+                                                    // {tbl.comment}
+                                                  </span>
+                                                )}
                                               </div>
                                             );
                                           })}

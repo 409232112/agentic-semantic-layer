@@ -6,7 +6,7 @@
       "properties": {
         "connection-url": "jdbc:mysql://192.168.0.165:3306/",
         "connection-user": "root",
-        "connection-password": "sm2:cb890c9cf2ca303372cf1396551cb47836da91bb9d9949df1ce2bbc69fb0905d6de61651ea27ff4d6607a5cba96682c79c385a232153d813f9b0035657cce92875564ea88df815f688de4dd7f5c85fcb138e2bfe5ccd59469f9190b19426b214b8cc89af4a49261bbac696ff"
+        "connection-password": "sm2:fd3574d89439896f9817accf3dc631e5ea98ca50017bd5ac11e0ad2c3efd663b5c028b43795bde38669beeccd1f1c53f2490bd731aafd400759bd111704a339e43f0b65cba2c8b9bde1be70441629dd8b4a767ca2daed164514830c3116c52a945f0d1180d7b8f5ad9ea3984"
       }
     },
     {
@@ -15,7 +15,7 @@
       "properties": {
         "connection-url": "jdbc:postgresql://192.168.0.165:5432/agentic",
         "connection-user": "postgres",
-        "connection-password": "sm2:2a14210a89ef454d92273a45cac3c422fc09920965844b664c65a565f3a4c9012e4d070d5388e1ddc47386d10435fe3a97af73e5eb78a1dbddfe6ed98f62806d9f7e15b7b8b4dcd405737df203544d62e32721a937e51b43b7fc2500bdffecfe5d5479db258bf4f7651bb567"
+        "connection-password": "sm2:4088423765389151c8b6d6ace1e5da725935970ecb636dd382b946384decf5898939e09beb18b6d34eca2752c9c3446b5adcaf0e4c8c658fa0cf212efc7d747997ecdf2b3fd17bea4019aca89065ce3cb803521023b56a9d6fb97bb7c3aeef10ae04ef75ad4a5c97786ad212"
       }
     }
   ],
