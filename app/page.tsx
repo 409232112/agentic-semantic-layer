@@ -802,14 +802,14 @@ export default function WorkspaceConsole() {
           <div className="p-5 border-b border-white/10 flex items-center space-x-2.5 bg-[#0a0a0c]">
             <div className="w-2.5 h-2.5 bg-[#ff2a2a] animate-pulse" />
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold tracking-[0.1em] text-[#eaeaea] uppercase font-mono whitespace-nowrap">[ AGENTIC SEMANTIC LAYER ]</span>
-              <span className="text-[8px] font-mono text-[#ff2a2a] uppercase tracking-widest leading-none mt-0.5">系统版本: 3.8.2</span>
+              <span className="text-[11.5px] font-bold tracking-[0.1em] text-[#eaeaea] uppercase font-mono whitespace-nowrap">[ AGENTIC SEMANTIC LAYER ]</span>
+              <span className="text-[9.5px] font-mono text-[#ff2a2a] uppercase tracking-widest leading-none mt-0.5">系统版本: 3.8.2</span>
             </div>
           </div>
 
           {/* 全局场景下拉选择器 */}
           <div className="p-4 border-b border-white/10 bg-[#0c0c0f]">
-            <label className="block text-[9px] font-mono uppercase tracking-[0.2em] text-slate-500 mb-1.5 font-bold">
+            <label className="block text-[10.5px] font-mono uppercase tracking-[0.2em] text-slate-500 mb-1.5 font-bold">
               &gt;&gt;&gt; 请选择当前活跃场景
             </label>
             <div className="relative">
@@ -833,7 +833,7 @@ export default function WorkspaceConsole() {
 
           {/* 侧边导航菜单 */}
           <nav className="p-3 space-y-1">
-            <span className="px-2 text-[9px] font-mono uppercase tracking-[0.22em] text-slate-500 block mb-3 font-bold">/// 场景层级操作菜单</span>
+            <span className="px-2 text-[10.5px] font-mono uppercase tracking-[0.22em] text-slate-500 block mb-3 font-bold">/// 场景层级操作菜单</span>
             
             {/* 1. 全局语义设定 */}
             <button
