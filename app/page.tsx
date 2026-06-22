@@ -111,6 +111,14 @@ export default function WorkspaceConsole() {
   const [selectedScenario, setSelectedScenario] = useState<string>('');
   const [datasources, setDatasources] = useState<any[]>([]);
 
+  // Loading 与防重交互状态
+  const [isInitLoading, setIsInitLoading] = useState(true);
+  const [isDbTreeLoading, setIsDbTreeLoading] = useState(false);
+  const [isTableDetailsLoading, setIsTableDetailsLoading] = useState(false);
+  const [isScenarioTreeLoading, setIsScenarioTreeLoading] = useState(false);
+  const [deletingDsNames, setDeletingDsNames] = useState<string[]>([]);
+  const [deletingScenarioCodes, setDeletingScenarioCodes] = useState<string[]>([]);
+
   // 加载场景和数据源
   const refreshMetadata = async () => {
     try {
@@ -128,6 +136,8 @@ export default function WorkspaceConsole() {
       }
     } catch (err) {
       console.error("Failed to load metadata:", err);
+    } finally {
+      setIsInitLoading(false);
     }
   };
 
@@ -268,23 +278,28 @@ export default function WorkspaceConsole() {
   // 监听 datasources 列表，为可供选择的数据源和表结构建立树状节点结构
   useEffect(() => {
     const fetchTreeMetadata = async () => {
-      const treeNodes = [];
-      for (const ds of datasources) {
-        try {
-          const res = await fetch(`/api/semantics/schema?catalog=${ds.name}`);
-          const data = await res.json();
-          if (data.success && data.schemas) {
-            treeNodes.push({
-              catalog: ds.name,
-              connector: ds.connector,
-              schemas: data.schemas
-            });
+      setIsScenarioTreeLoading(true);
+      try {
+        const treeNodes = [];
+        for (const ds of datasources) {
+          try {
+            const res = await fetch(`/api/semantics/schema?catalog=${ds.name}`);
+            const data = await res.json();
+            if (data.success && data.schemas) {
+              treeNodes.push({
+                catalog: ds.name,
+                connector: ds.connector,
+                schemas: data.schemas
+              });
+            }
+          } catch (err) {
+            console.error("Failed to load catalog schemas for tree selector:", ds.name, err);
           }
-        } catch (err) {
-          console.error("Failed to load catalog schemas for tree selector:", ds.name, err);
         }
+        setAvailableTree(treeNodes);
+      } finally {
+        setIsScenarioTreeLoading(false);
       }
-      setAvailableTree(treeNodes);
     };
     if (showScenarioSettings && datasources.length > 0) {
       fetchTreeMetadata();
@@ -336,6 +351,7 @@ export default function WorkspaceConsole() {
     const confirmed = await customConfirm(`确认要卸载物理数据源 "${name}" 吗？此操作将在 Trino 动态注销 Catalog，已选定此数据源的分析场景将可能无法读取该 Catalog 下的物理表。`, '/// 数据源卸载确认');
     if (!confirmed) return;
     
+    setDeletingDsNames(prev => [...prev, name]);
     try {
       const res = await fetch(`/api/datasource?name=${name}`, {
         method: 'DELETE'
@@ -349,6 +365,8 @@ export default function WorkspaceConsole() {
       }
     } catch (err: any) {
       await customAlert('卸载异常: ' + err.message, '/// 系统异常');
+    } finally {
+      setDeletingDsNames(prev => prev.filter(n => n !== name));
     }
   };
 
@@ -358,6 +376,7 @@ export default function WorkspaceConsole() {
     if (!confirmed) {
       return;
     }
+    setDeletingScenarioCodes(prev => [...prev, code]);
     try {
       const res = await fetch(`/api/scenario?code=${code}`, {
         method: 'DELETE'
@@ -374,6 +393,8 @@ export default function WorkspaceConsole() {
       }
     } catch (err: any) {
       await customAlert('删除异常: ' + err.message, '/// 系统异常');
+    } finally {
+      setDeletingScenarioCodes(prev => prev.filter(c => c !== code));
     }
   };
 
@@ -416,37 +437,42 @@ export default function WorkspaceConsole() {
     const scenarioDetail = scenarios.find(s => s.code === selectedScenario);
     if (!scenarioDetail) return;
     
-    const targetTables = scenarioDetail.tables || [];
-    const treeData = [];
-    for (const catalog of scenarioDetail.catalogs) {
-      try {
-        const res = await fetch(`/api/semantics/schema?catalog=${catalog}`);
-        const data = await res.json();
-        if (data.success && data.schemas) {
-          // 过滤，只保留该场景选定 tables 下的 schema 与 table
-          const filteredSchemas = data.schemas.map((schNode: any) => {
-            const matchedTables = (schNode.tables || []).filter((tName: string) => {
-              const fullPath = `${catalog}.${schNode.name}.${tName}`;
-              return targetTables.includes(fullPath);
-            });
-            return {
-              ...schNode,
-              tables: matchedTables
-            };
-          }).filter((schNode: any) => schNode.tables.length > 0);
+    setIsDbTreeLoading(true);
+    try {
+      const targetTables = scenarioDetail.tables || [];
+      const treeData = [];
+      for (const catalog of scenarioDetail.catalogs) {
+        try {
+          const res = await fetch(`/api/semantics/schema?catalog=${catalog}`);
+          const data = await res.json();
+          if (data.success && data.schemas) {
+            // 过滤，只保留该场景选定 tables 下的 schema 与 table
+            const filteredSchemas = data.schemas.map((schNode: any) => {
+              const matchedTables = (schNode.tables || []).filter((tName: string) => {
+                const fullPath = `${catalog}.${schNode.name}.${tName}`;
+                return targetTables.includes(fullPath);
+              });
+              return {
+                ...schNode,
+                tables: matchedTables
+              };
+            }).filter((schNode: any) => schNode.tables.length > 0);
 
-          if (filteredSchemas.length > 0) {
-            treeData.push({
-              catalog,
-              schemas: filteredSchemas
-            });
+            if (filteredSchemas.length > 0) {
+              treeData.push({
+                catalog,
+                schemas: filteredSchemas
+              });
+            }
           }
+        } catch (err) {
+          console.error(`Error fetching catalog ${catalog}:`, err);
         }
-      } catch (err) {
-        console.error(`Error fetching catalog ${catalog}:`, err);
       }
+      setDbTree(treeData);
+    } finally {
+      setIsDbTreeLoading(false);
     }
-    setDbTree(treeData);
   };
 
   useEffect(() => {
@@ -466,6 +492,7 @@ export default function WorkspaceConsole() {
     setActiveTable({ catalog, schema, table });
     setActiveTableDesc('');
     setPhysicalTableComment('');
+    setIsTableDetailsLoading(true);
     
     try {
       // 1. 获取该场景下已保存的语义定义
@@ -504,6 +531,8 @@ export default function WorkspaceConsole() {
       }
     } catch (err) {
       console.error("Error loading table details:", err);
+    } finally {
+      setIsTableDetailsLoading(false);
     }
   };
 
@@ -731,6 +760,34 @@ export default function WorkspaceConsole() {
 
 
 
+
+  if (isInitLoading) {
+    return (
+      <div className="flex h-screen w-screen bg-[#050505] font-mono text-[#eaeaea] items-center justify-center relative">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-500/2 blur-[120px] pointer-events-none" />
+        <div className="scanlines" />
+        <div className="space-y-4 text-center border border-white/10 bg-[#0a0a0c] p-8 max-w-sm w-full relative">
+          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-[#ff2a2a]" />
+          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-[#ff2a2a]" />
+          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-[#ff2a2a]" />
+          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-[#ff2a2a]" />
+          
+          <div className="flex justify-center">
+            <ArrowCounterClockwise className="animate-spin text-[#ff2a2a]" size={32} />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-xs font-bold tracking-[0.2em] text-[#eaeaea] uppercase">
+              Initializing Console
+            </h1>
+            <p className="text-[10px] text-slate-500 tracking-wider animate-pulse uppercase">
+              Loading physical datasources & scenario profiles...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-[#050505] font-sans text-slate-100 overflow-hidden relative">
@@ -973,7 +1030,16 @@ export default function WorkspaceConsole() {
                 <span>物理表结构目录树</span>
               </h3>
               <div className="space-y-2">
-                {dbTree.length === 0 ? (
+                {isDbTreeLoading ? (
+                  <div className="space-y-3 py-2">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="animate-pulse space-y-2">
+                        <div className="h-4 bg-slate-800/80 w-3/4 rounded-sm" />
+                        <div className="h-3 bg-slate-900/60 w-1/2 ml-4 rounded-sm" />
+                      </div>
+                    ))}
+                  </div>
+                ) : dbTree.length === 0 ? (
                   <div className="text-[10px] font-mono text-slate-500 italic py-2">暂无场景绑定的表，请在场景配置中选择。</div>
                 ) : (
                   dbTree.map(catNode => (
@@ -1032,7 +1098,13 @@ export default function WorkspaceConsole() {
             {/* 右侧：表描述编辑区 */}
             <div className="col-span-9 h-full flex flex-col overflow-hidden bg-slate-950">
               {activeTable ? (
-                <div className="flex-1 flex flex-col overflow-hidden">
+                <div className="flex-1 flex flex-col overflow-hidden relative">
+                  {isTableDetailsLoading && (
+                    <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center space-y-2 font-mono text-xs text-slate-400">
+                      <ArrowCounterClockwise size={20} className="animate-spin text-[#ff2a2a]" />
+                      <span className="tracking-wider uppercase text-[10px] animate-pulse">正在拉取物理表字段及注释...</span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between px-6 py-3 border-b border-slate-800 bg-slate-900/40">
                     <div>
                       <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest leading-none">Table Semantic Setting</span>
@@ -1040,8 +1112,8 @@ export default function WorkspaceConsole() {
                     </div>
                     <button 
                       onClick={saveSemantics}
-                      disabled={isSemanticsSaving}
-                      className="bg-[#ff2a2a] hover:bg-[#ff4d4d] text-black text-xs font-bold px-4 py-1.5 rounded-md flex items-center space-x-1 transition-all cursor-pointer"
+                      disabled={isSemanticsSaving || isTableDetailsLoading}
+                      className="bg-[#ff2a2a] hover:bg-[#ff4d4d] text-black text-xs font-bold px-4 py-1.5 rounded-md flex items-center space-x-1 transition-all cursor-pointer disabled:opacity-50"
                     >
                       {isSemanticsSaving ? <ArrowCounterClockwise size={12} className="animate-spin" /> : <Check size={12} />}
                       <span>保存表级别语义描述</span>
@@ -1106,7 +1178,16 @@ export default function WorkspaceConsole() {
                 <span>物理表结构目录树</span>
               </h3>
               <div className="space-y-2">
-                {dbTree.length === 0 ? (
+                {isDbTreeLoading ? (
+                  <div className="space-y-3 py-2">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="animate-pulse space-y-2">
+                        <div className="h-4 bg-slate-800/80 w-3/4 rounded-sm" />
+                        <div className="h-3 bg-slate-900/60 w-1/2 ml-4 rounded-sm" />
+                      </div>
+                    ))}
+                  </div>
+                ) : dbTree.length === 0 ? (
                   <div className="text-[10px] font-mono text-slate-500 italic py-2">暂无场景绑定的表，请在场景配置中选择。</div>
                 ) : (
                   dbTree.map(catNode => (
@@ -1165,7 +1246,13 @@ export default function WorkspaceConsole() {
             {/* 右侧：字段编辑网格 */}
             <div className="col-span-9 h-full flex flex-col overflow-hidden bg-slate-950">
               {activeTable ? (
-                <div className="flex-1 flex flex-col overflow-hidden">
+                <div className="flex-1 flex flex-col overflow-hidden relative">
+                  {isTableDetailsLoading && (
+                    <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center space-y-2 font-mono text-xs text-slate-400">
+                      <ArrowCounterClockwise size={20} className="animate-spin text-[#ff2a2a]" />
+                      <span className="tracking-wider uppercase text-[10px] animate-pulse">正在拉取物理表字段及注释...</span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between px-6 py-3 border-b border-slate-800 bg-slate-900/40">
                     <div>
                       <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest leading-none">Field Semantic Setting</span>
@@ -1173,8 +1260,8 @@ export default function WorkspaceConsole() {
                     </div>
                     <button 
                       onClick={saveSemantics}
-                      disabled={isSemanticsSaving}
-                      className="bg-[#ff2a2a] hover:bg-[#ff4d4d] text-black text-xs font-bold px-4 py-1.5 rounded-md flex items-center space-x-1 transition-all cursor-pointer"
+                      disabled={isSemanticsSaving || isTableDetailsLoading}
+                      className="bg-[#ff2a2a] hover:bg-[#ff4d4d] text-black text-xs font-bold px-4 py-1.5 rounded-md flex items-center space-x-1 transition-all cursor-pointer disabled:opacity-50"
                     >
                       {isSemanticsSaving ? <ArrowCounterClockwise size={12} className="animate-spin" /> : <Check size={12} />}
                       <span>保存字段语义配置</span>
@@ -1487,7 +1574,8 @@ export default function WorkspaceConsole() {
                         <div className="flex items-center justify-end space-x-2 pt-2.5 border-t border-white/5">
                           <button
                             onClick={() => startEditDatasource(ds)}
-                            className="flex items-center space-x-1 text-[10px] font-mono text-slate-350 hover:text-emerald-400 cursor-pointer border border-white/10 hover:border-emerald-500/30 bg-white/5 hover:bg-emerald-500/5 px-2.5 py-1 transition-all duration-150 whitespace-nowrap"
+                            disabled={deletingDsNames.includes(ds.name)}
+                            className="flex items-center space-x-1 text-[10px] font-mono text-slate-350 hover:text-emerald-400 cursor-pointer border border-white/10 hover:border-emerald-500/30 bg-white/5 hover:bg-emerald-500/5 px-2.5 py-1 transition-all duration-150 whitespace-nowrap disabled:opacity-30 disabled:cursor-not-allowed"
                             title="编辑物理数据源"
                           >
                             <PencilSimple size={11} />
@@ -1495,11 +1583,16 @@ export default function WorkspaceConsole() {
                           </button>
                           <button
                             onClick={() => handleDeleteDatasource(ds.name)}
-                            className="flex items-center space-x-1 text-[10px] font-mono text-rose-500 hover:text-rose-450 cursor-pointer border border-rose-500/20 hover:border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 px-2.5 py-1 transition-all duration-150 whitespace-nowrap"
+                            disabled={deletingDsNames.includes(ds.name)}
+                            className="flex items-center space-x-1 text-[10px] font-mono text-rose-500 hover:text-rose-450 cursor-pointer border border-rose-500/20 hover:border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 px-2.5 py-1 transition-all duration-150 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                             title="卸载物理数据源"
                           >
-                            <Trash size={11} />
-                            <span>卸载 / UNMOUNT</span>
+                            {deletingDsNames.includes(ds.name) ? (
+                              <ArrowCounterClockwise size={11} className="animate-spin" />
+                            ) : (
+                              <Trash size={11} />
+                            )}
+                            <span>{deletingDsNames.includes(ds.name) ? '卸载中...' : '卸载 / UNMOUNT'}</span>
                           </button>
                         </div>
                       </div>
@@ -1676,17 +1769,23 @@ export default function WorkspaceConsole() {
                             <span className="text-[10px] font-mono text-[#ff2a2a] bg-[#ff2a2a]/10 border border-[#ff2a2a]/20 px-1.5 py-0.5">{sc.code.toUpperCase()}</span>
                             <button 
                               onClick={() => startEditScenario(sc)}
-                              className="p-1 text-slate-400 hover:text-[#ff2a2a] border border-transparent hover:border-white/10 cursor-pointer"
+                              disabled={deletingScenarioCodes.includes(sc.code)}
+                              className="p-1 text-slate-400 hover:text-[#ff2a2a] border border-transparent hover:border-white/10 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                               title="编辑"
                             >
                               <PencilSimple size={12} />
                             </button>
                             <button 
                               onClick={() => handleDeleteScenario(sc.code)}
-                              className="p-1 text-slate-400 hover:text-[#ff2a2a] border border-transparent hover:border-white/10 cursor-pointer"
+                              disabled={deletingScenarioCodes.includes(sc.code)}
+                              className="p-1 text-slate-400 hover:text-[#ff2a2a] border border-transparent hover:border-white/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                               title="删除"
                             >
-                              <Trash size={12} />
+                              {deletingScenarioCodes.includes(sc.code) ? (
+                                <ArrowCounterClockwise size={12} className="animate-spin" />
+                              ) : (
+                                <Trash size={12} />
+                              )}
                             </button>
                           </div>
                         </div>
@@ -1749,7 +1848,12 @@ export default function WorkspaceConsole() {
                     <div>
                       <label className="block text-[10px] text-slate-400 mb-2">配置场景数据访问范围 / SELECT CATALOGS & TABLES (树形勾选)</label>
                       <div className="space-y-3 max-h-80 overflow-y-auto border border-white/10 p-3 bg-[#050507]">
-                        {availableTree.length === 0 ? (
+                        {isScenarioTreeLoading ? (
+                          <div className="flex items-center space-x-2 text-[10px] font-mono text-slate-500 py-3 animate-pulse">
+                            <ArrowCounterClockwise className="animate-spin text-[#ff2a2a]" size={12} />
+                            <span>正在并发检索物理 Catalog 结构树...</span>
+                          </div>
+                        ) : availableTree.length === 0 ? (
                           <div className="text-[10px] font-mono text-slate-500 italic py-2">暂无可用数据源，请确保至少成功挂载一个 Catalog。</div>
                         ) : (
                           availableTree.map(catNode => {
