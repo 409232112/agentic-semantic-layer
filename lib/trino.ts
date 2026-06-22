@@ -23,13 +23,19 @@ export interface TrinoErrorDetails {
 export async function runTrinoQuery(sql: string, user = 'admin'): Promise<TrinoResult> {
   const trinoUrl = process.env.TRINO_URL || 'http://localhost:8080';
   
+  // Trino REST API 仅接收单条 SQL 且不支持末尾的分号。在此自动清洗末尾的分号和空白符。
+  let cleanedSql = sql.trim();
+  while (cleanedSql.endsWith(';')) {
+    cleanedSql = cleanedSql.slice(0, -1).trim();
+  }
+
   const response = await fetch(`${trinoUrl}/v1/statement`, {
     method: 'POST',
     headers: {
       'X-Trino-User': user,
       'Content-Type': 'text/plain',
     },
-    body: sql,
+    body: cleanedSql,
   });
 
   if (!response.ok) {
