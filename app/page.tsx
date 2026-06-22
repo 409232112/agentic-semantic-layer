@@ -733,7 +733,22 @@ export default function WorkspaceConsole() {
           rows: data.data || []
         });
       } else {
-        setSqlError(data.error || '查询执行失败');
+        if (typeof data.error === 'object' && data.error !== null) {
+          const errObj = data.error;
+          let formattedErr = `Error Message: ${errObj.message || 'Unknown syntax error'}`;
+          if (errObj.errorName) {
+            formattedErr += `\nError Name: ${errObj.errorName}`;
+          }
+          if (errObj.errorCode) {
+            formattedErr += ` (Code: ${errObj.errorCode})`;
+          }
+          if (errObj.recommendation) {
+            formattedErr += `\n\nRecommendation: ${errObj.recommendation}`;
+          }
+          setSqlError(formattedErr);
+        } else {
+          setSqlError(data.error || '查询执行失败');
+        }
       }
     } catch (err: any) {
       setSqlError(err.message || '查询异常');
