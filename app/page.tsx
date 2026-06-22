@@ -946,13 +946,13 @@ export default function WorkspaceConsole() {
           <div className="flex items-center space-x-2">
             <button 
               onClick={() => setShowDatasourceSettings(true)}
-              className="px-3 py-1.5 text-[10px] font-mono border border-emerald-500 text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/15 transition-all cursor-pointer font-bold"
+              className="px-3 py-1.5 text-xs font-mono border border-emerald-500 text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/15 transition-all cursor-pointer font-bold"
             >
               [ 数据源配置 / DATASOURCES ]
             </button>
             <button 
               onClick={() => setShowScenarioSettings(true)}
-              className="px-3 py-1.5 text-[10px] font-mono border border-[#ff2a2a] text-[#ff2a2a] bg-[#ff2a2a]/5 hover:bg-[#ff2a2a]/15 transition-all cursor-pointer font-bold"
+              className="px-3 py-1.5 text-xs font-mono border border-[#ff2a2a] text-[#ff2a2a] bg-[#ff2a2a]/5 hover:bg-[#ff2a2a]/15 transition-all cursor-pointer font-bold"
             >
               [ 业务场景定义 / SCENARIOS ]
             </button>
@@ -1002,10 +1002,10 @@ export default function WorkspaceConsole() {
               <button 
                 onClick={saveGlobalRulesOnly}
                 disabled={isRulesSaving}
-                className="bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold px-5 py-2 rounded-md flex items-center space-x-1 transition-all cursor-pointer shadow-md shadow-emerald-500/10"
+                className="bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold px-5 py-2 rounded-md flex items-center space-x-1.5 transition-all cursor-pointer shadow-md shadow-emerald-500/10 disabled:opacity-50"
               >
-                {isRulesSaving ? <ArrowCounterClockwise size={12} className="animate-spin" /> : <Check size={12} />}
-                <span>保存全局规则</span>
+                {isRulesSaving && <ArrowCounterClockwise size={12} className="animate-spin" />}
+                <span>{isRulesSaving ? '正在保存...' : '保存全局规则'}</span>
               </button>
             </div>
             <div className="flex-1">
@@ -1113,10 +1113,10 @@ export default function WorkspaceConsole() {
                     <button 
                       onClick={saveSemantics}
                       disabled={isSemanticsSaving || isTableDetailsLoading}
-                      className="bg-[#ff2a2a] hover:bg-[#ff4d4d] text-black text-xs font-bold px-4 py-1.5 rounded-md flex items-center space-x-1 transition-all cursor-pointer disabled:opacity-50"
+                      className="bg-[#ff2a2a] hover:bg-[#ff4d4d] text-black text-xs font-bold px-4 py-1.5 rounded-md flex items-center space-x-1.5 transition-all cursor-pointer disabled:opacity-50"
                     >
-                      {isSemanticsSaving ? <ArrowCounterClockwise size={12} className="animate-spin" /> : <Check size={12} />}
-                      <span>保存表级别语义描述</span>
+                      {isSemanticsSaving && <ArrowCounterClockwise size={12} className="animate-spin" />}
+                      <span>{isSemanticsSaving ? '正在保存...' : '保存表级别语义描述'}</span>
                     </button>
                   </div>
 
@@ -1261,10 +1261,10 @@ export default function WorkspaceConsole() {
                     <button 
                       onClick={saveSemantics}
                       disabled={isSemanticsSaving || isTableDetailsLoading}
-                      className="bg-[#ff2a2a] hover:bg-[#ff4d4d] text-black text-xs font-bold px-4 py-1.5 rounded-md flex items-center space-x-1 transition-all cursor-pointer disabled:opacity-50"
+                      className="bg-[#ff2a2a] hover:bg-[#ff4d4d] text-black text-xs font-bold px-4 py-1.5 rounded-md flex items-center space-x-1.5 transition-all cursor-pointer disabled:opacity-50"
                     >
-                      {isSemanticsSaving ? <ArrowCounterClockwise size={12} className="animate-spin" /> : <Check size={12} />}
-                      <span>保存字段语义配置</span>
+                      {isSemanticsSaving && <ArrowCounterClockwise size={12} className="animate-spin" />}
+                      <span>{isSemanticsSaving ? '正在保存...' : '保存字段语义配置'}</span>
                     </button>
                   </div>
 
@@ -1707,9 +1707,9 @@ export default function WorkspaceConsole() {
                       <button 
                         type="submit" 
                         disabled={isDsSubmitting}
-                        className="flex-1 bg-[#ff2a2a] text-black font-bold text-xs py-2 hover:bg-[#ff4d4d] cursor-pointer flex items-center justify-center space-x-1"
+                        className="flex-1 bg-[#ff2a2a] text-black font-bold text-xs py-2 hover:bg-[#ff4d4d] cursor-pointer flex items-center justify-center space-x-1.5 disabled:opacity-50"
                       >
-                        {isDsSubmitting ? <ArrowCounterClockwise className="animate-spin" size={12} /> : <Check size={12} />}
+                        {isDsSubmitting && <ArrowCounterClockwise className="animate-spin" size={12} />}
                         <span>{isDsSubmitting ? '正在提交...' : (isEditingDs ? '确认保存修改' : '确认热挂载新物理数据源')}</span>
                       </button>
                       {isEditingDs && (
@@ -1936,9 +1936,8 @@ export default function WorkspaceConsole() {
                     <div className="flex space-x-2">
                       <button 
                         type="submit" 
-                        className="flex-1 bg-[#ff2a2a] text-black font-bold text-xs py-2 hover:bg-[#ff4d4d] cursor-pointer flex items-center justify-center space-x-1"
+                        className="flex-1 bg-[#ff2a2a] text-black font-bold text-xs py-2 hover:bg-[#ff4d4d] cursor-pointer flex items-center justify-center"
                       >
-                        <Check size={12} />
                         <span>{isEditingScenario ? '保存修改' : '创建分析场景'}</span>
                       </button>
                       {isEditingScenario && (
